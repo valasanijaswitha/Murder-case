@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.login-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 24px; background: var(--bg);
+}
+.login-card {
+  width: 100%; max-width: 380px;
+  background: rgba(9,13,24,0.97);
+  border: 1px solid rgba(192,57,43,0.2);
+  animation: fadeUp 0.5s ease;
+}
+.login-header {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid rgba(192,57,43,0.15);
+}
+.login-body { padding: 24px 28px 28px; }
+.org-tag {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.28em;
+  color: var(--danger); margin-bottom: 12px; opacity: 0.7;
+  text-transform: uppercase;
+}
+.login-title {
+  font-family: var(--fd); font-size: 22px; font-weight: 700;
+  letter-spacing: 0.14em; color: var(--text-bright);
+}
+.login-sub {
+  font-family: var(--fm); font-size: 10px; letter-spacing: 0.14em;
+  color: var(--text-dim); margin-top: 4px;
+}
+.field-label {
+  display: block; font-family: var(--fd); font-size: 9px;
+  font-weight: 600; letter-spacing: 0.22em; color: var(--text-dim);
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.field-input {
+  width: 100%; padding: 10px 14px;
+  background: rgba(0,0,0,0.5) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  color: var(--text) !important;
+  font-family: var(--fm) !important; font-size: 13px;
+  margin-bottom: 16px;
+}
+.field-input:focus {
+  border-color: rgba(192,57,43,0.35) !important;
+}
+.submit-btn {
+  width: 100%; padding: 12px;
+  background: rgba(192,57,43,0.08);
+  border: 1px solid rgba(192,57,43,0.35);
+  color: var(--danger);
+  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
+  transition: all 0.2s;
+}
+.submit-btn:hover { background: var(--danger); color: #fff; }
+.error-bar {
+  padding: 10px 14px; margin-bottom: 16px;
+  background: rgba(192,57,43,0.07);
+  border: 1px solid rgba(192,57,43,0.3);
+  font-family: var(--fm); font-size: 11px; color: #e57373;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="org-tag">HELIX DYNAMICS // ADMINISTRATOR ACCESS</div>
+      <div class="login-title">EVENT CONTROL</div>
+      <div class="login-sub">THE LAST CASE — CASE 09</div>
+    </div>
+    <div class="login-body">
+      {% if error %}
+      <div class="error-bar">⚠ {{ error }}</div>
+      {% endif %}
+      <form method="POST">
+        <label class="field-label">Administrator Password</label>
+        <input type="password" name="password" class="field-input"
+               placeholder="••••••••" required autofocus>
+        <button type="submit" class="submit-btn">AUTHENTICATE →</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

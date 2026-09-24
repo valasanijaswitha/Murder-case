@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="min-height:100vh; display:flex; flex-direction:column;
+            background:var(--bg); padding:18px 22px;">
+
+  <!-- Header -->
+  <header style="display:flex; align-items:center; justify-content:space-between;
+                 padding-bottom:14px; border-bottom:1px solid rgba(192,57,43,0.2);
+                 margin-bottom:20px; flex-shrink:0;">
+    <div>
+      <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.28em;
+                  color:var(--danger); margin-bottom:4px; opacity:0.7;">
+        HELIX DYNAMICS // ADMINISTRATOR
+      </div>
+      <div style="font-family:var(--fd); font-size:20px; font-weight:700;
+                  letter-spacing:0.18em; color:var(--text-bright);">
+        LEADERBOARD — CASE 09
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+        <span class="global-timer">--:--:--</span>
+        <span style="margin-left:6px; opacity:0.5;">remaining</span>
+      </div>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost" style="font-size:10px;">← TEAMS</a>
+    </div>
+  </header>
+
+  <!-- Nav -->
+  <div style="display:flex; gap:0; margin-bottom:20px; flex-shrink:0;">
+    <a href="{{ url_for('admin.dashboard') }}"
+       style="padding:6px 16px; font-family:var(--fd); font-size:10px; letter-spacing:0.16em;
+              text-transform:uppercase; text-decoration:none; border:1px solid var(--border);
+              color:var(--text-dim); margin-right:-1px; transition:all 0.15s;"
+       onmouseover="this.style.color='var(--accent)'"
+       onmouseout="this.style.color='var(--text-dim)'">TEAMS</a>
+    <a href="{{ url_for('admin.leaderboard') }}"
+       style="padding:6px 16px; font-family:var(--fd); font-size:10px; letter-spacing:0.16em;
+              text-transform:uppercase; text-decoration:none;
+              border:1px solid var(--border-ac); color:var(--text-bright);
+              background:var(--accent-dim); margin-right:-1px;">LEADERBOARD</a>
+    <a href="{{ url_for('admin.activity') }}"
+       style="padding:6px 16px; font-family:var(--fd); font-size:10px; letter-spacing:0.16em;
+              text-transform:uppercase; text-decoration:none; border:1px solid var(--border);
+              color:var(--text-dim); transition:all 0.15s;"
+       onmouseover="this.style.color='var(--accent)'"
+       onmouseout="this.style.color='var(--text-dim)'">ACTIVITY</a>
+  </div>
+
+  <!-- Table -->
+  <div style="flex-grow:1; overflow-y:auto;">
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:left; padding:10px 14px; font-weight:600; width:50px;">#</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:left; padding:10px 14px; font-weight:600;">TEAM</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:center; padding:10px 14px; font-weight:600;">ROUND</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:center; padding:10px 14px; font-weight:600;">PUZZLES</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:center; padding:10px 14px; font-weight:600;">GHOST PTS</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:right; padding:10px 14px; font-weight:600;">STATUS</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-transform:uppercase; text-align:right; padding:10px 14px; font-weight:600;">SCORE</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        {% set solved = team.solved_puzzles.split(',') if team.solved_puzzles else [] %}
+        {% set solved_count = (solved|reject('equalto','')|list)|length %}
+        <tr style="border-bottom:1px solid var(--border); transition:background 0.15s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.02)'"
+            onmouseout="this.style.background='transparent'">
+
+          <!-- Rank -->
+          <td style="padding:14px; text-align:left;">
+            <div style="font-family:var(--fm); font-size:11px;
+                        color:{% if loop.index == 1 %}rgba(212,175,55,0.9){% elif loop.index == 2 %}rgba(192,192,192,0.8){% elif loop.index == 3 %}rgba(184,134,11,0.8){% else %}var(--text-dim){% endif %}; font-weight:600;">
+              {% if loop.index <= 3 %}
+                {{ ['◈','◈','◈'][loop.index-1] }}
+              {% else %}
+                {{ loop.index }}
+              {% endif %}
+            </div>
+          </td>
+
+          <!-- Team -->
+          <td style="padding:14px;">
+            <div style="font-family:var(--fd); font-size:14px; font-weight:700;
+                        letter-spacing:0.1em; color:var(--text-bright); margin-bottom:2px;">
+              {{ team.team_name }}
+            </div>
+            <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim);">
+              {{ team.player1_name }} &amp; {{ team.player2_name }}
+            </div>
+          </td>
+
+          <!-- Round -->
+          <td style="padding:14px; text-align:center;">
+            <div style="font-family:var(--fd); font-size:18px; font-weight:700;
+                        color:var(--text-bright);">0{{ team.current_round }}</div>
+            <div style="font-family:var(--fd); font-size:8px; letter-spacing:0.16em;
+                        color:var(--text-dim);">
+              {% if team.current_round == 1 %}CRIME SCENE
+              {% elif team.current_round == 2 %}DIGITAL TRAIL
+              {% elif team.current_round == 3 %}PROJECT 9
+              {% else %}FINAL DEDUCTION{% endif %}
+            </div>
+          </td>
+
+          <!-- Puzzles solved -->
+          <td style="padding:14px; text-align:center;">
+            <div style="font-family:var(--fd); font-size:18px; font-weight:700;
+                        color:{% if solved_count == 5 %}var(--success){% else %}var(--text-bright){% endif %};">
+              {{ solved_count }}/5
+            </div>
+          </td>
+
+          <!-- Ghost points -->
+          <td style="padding:14px; text-align:center;">
+            <div style="font-family:var(--fm); font-size:14px; color:var(--accent);">
+              {{ team.ghost_points }}
+            </div>
+          </td>
+
+          <!-- Status -->
+          <td style="padding:14px; text-align:right;">
+            <span style="font-family:var(--fm); font-size:9px; letter-spacing:0.14em;
+                         padding:3px 10px; border:1px solid;
+                         color:{% if team.status == 'ACTIVE' %}var(--success){% elif team.status == 'FINISHED' %}var(--accent){% else %}var(--warn){% endif %};
+                         border-color:{% if team.status == 'ACTIVE' %}rgba(39,174,96,0.3){% elif team.status == 'FINISHED' %}var(--border-ac){% else %}rgba(184,134,11,0.3){% endif %};">
+              {{ team.status }}
+            </span>
+          </td>
+
+          <!-- Score -->
+          <td style="padding:14px; text-align:right;">
+            <div style="font-family:var(--fd); font-size:20px; font-weight:700;
+                        color:{% if loop.index == 1 %}rgba(212,175,55,0.9){% else %}var(--text-bright){% endif %};">
+              {{ team.score }}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="padding:48px; text-align:center;
+              font-family:var(--fd); font-size:14px; letter-spacing:0.2em; color:var(--text-dim);">
+            NO TEAMS REGISTERED
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

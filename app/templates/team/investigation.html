@@ -1,0 +1,1857 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+/* ────────────────────────────────────────────
+   INVESTIGATION PAGE STYLES
+   ──────────────────────────────────────────── */
+
+/* ── Layout ── */
+.inv-wrap {
+  height: 100vh; display: flex; flex-direction: column;
+  padding: 14px 16px; overflow: hidden;
+}
+.inv-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  margin-bottom: 12px; flex-shrink: 0;
+}
+.inv-main {
+  flex-grow: 1; display: flex; gap: 12px; min-height: 0;
+}
+
+/* ── Header elements ── */
+.hd-brand { display: flex; flex-direction: column; gap: 2px; }
+.hd-title {
+  font-family: var(--fd); font-size: 16px; font-weight: 700;
+  letter-spacing: 0.18em; color: var(--text-bright);
+  animation: flicker 7s infinite;
+}
+.hd-sub {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  color: var(--text-dim);
+}
+.hd-rounds { display: flex; gap: 0; }
+.hd-tab {
+  padding: 5px 14px; cursor: pointer;
+  font-family: var(--fd); font-size: 9px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  border: 1px solid; transition: all 0.18s;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  margin-right: -1px;
+}
+.hd-tab.active  { border-color: var(--border-ac); color: var(--text-bright); background: var(--accent-dim); }
+.hd-tab.done    { border-color: rgba(39,174,96,0.3); color: rgba(39,174,96,0.75); background: rgba(39,174,96,0.04); }
+.hd-tab.locked  { border-color: rgba(255,255,255,0.04); color: var(--text-dim); opacity: 0.4; cursor: not-allowed; }
+.hd-tab-num { font-size: 8px; }
+.hd-meta { display: flex; align-items: center; gap: 16px; }
+.hd-stat { text-align: right; }
+.hd-stat-val { font-family: var(--fm); font-size: 14px; color: var(--text-bright); }
+.hd-stat-val.ac { color: var(--accent); }
+.hd-stat-lbl { font-family: var(--fd); font-size: 8px; letter-spacing: 0.2em; color: var(--text-dim); }
+.hd-timer { font-family: var(--fm); font-size: 18px; }
+.hd-hq {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.14em;
+  color: var(--text-dim); text-decoration: none;
+  border: 1px solid var(--border); padding: 5px 10px;
+  transition: color 0.18s, border-color 0.18s;
+}
+.hd-hq:hover { color: var(--accent); border-color: var(--border-ac); }
+
+/* ── Scene area ── */
+.scene-area {
+  flex-grow: 1; position: relative;
+  border: 1px solid var(--border);
+  overflow: hidden; background: #03050b;
+}
+.scene-layer {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+}
+
+/* ── Hotspots ── */
+.hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+.hotspot-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(91,196,203,0.5);
+  animation: pulseHotspot 2.5s ease-in-out infinite;
+}
+.hotspot-cross {
+  position: relative; z-index: 1;
+  width: 14px; height: 14px;
+}
+.hotspot-cross::before, .hotspot-cross::after {
+  content: ''; position: absolute;
+  background: rgba(91,196,203,0.8);
+}
+.hotspot-cross::before { top: 50%; left: 0; right: 0; height: 1px; margin-top: -0.5px; }
+.hotspot-cross::after  { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -0.5px; }
+.hotspot-label {
+  position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-family: var(--fm); font-size: 8px;
+  letter-spacing: 0.18em; color: var(--accent);
+  background: rgba(7,9,15,0.92); border: 1px solid rgba(91,196,203,0.2);
+  padding: 2px 8px; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s;
+  text-transform: uppercase;
+}
+.hotspot:hover .hotspot-label { opacity: 1; }
+.hotspot:hover .hotspot-ring { border-color: var(--accent); }
+.hotspot:hover .hotspot-cross::before,
+.hotspot:hover .hotspot-cross::after { background: var(--accent); }
+.hotspot.solved .hotspot-ring { border-color: rgba(39,174,96,0.5); animation: none; }
+.hotspot.solved .hotspot-cross::before,
+.hotspot.solved .hotspot-cross::after { background: rgba(39,174,96,0.7); }
+.hotspot.locked { cursor: not-allowed; }
+.hotspot.locked .hotspot-ring { border-color: rgba(255,255,255,0.15); animation: none; }
+.hotspot.locked .hotspot-cross::before,
+.hotspot.locked .hotspot-cross::after { background: rgba(255,255,255,0.2); }
+
+@keyframes pulseHotspot {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.4); opacity: 0; }
+}
+
+/* ── Ghost ── */
+.ghost-wrap {
+  position: absolute; bottom: 0; right: 22%;
+  height: 60%; width: auto;
+  pointer-events: none; z-index: 3;
+}
+.ghost-img {
+  height: 100%; width: auto; object-fit: contain;
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  filter: saturate(0.3) brightness(1.4) hue-rotate(190deg);
+  animation: float 6s ease-in-out infinite, glitch 10s infinite;
+}
+.ghost-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(91,196,203,0.08) 0%, transparent 70%);
+  animation: pulseSubtle 4s infinite;
+}
+
+/* ── Scene HUD corners ── */
+.scene-hud {
+  position: absolute; top: 10px; left: 10px; z-index: 5;
+  font-family: var(--fm); font-size: 9px;
+  line-height: 1.9; letter-spacing: 0.12em; color: rgba(91,196,203,0.45);
+  pointer-events: none;
+}
+.scene-hud-br {
+  position: absolute; bottom: 10px; right: 10px; z-index: 5;
+  text-align: right; font-family: var(--fm); font-size: 9px;
+  line-height: 1.9; letter-spacing: 0.1em; color: rgba(255,255,255,0.2);
+  pointer-events: none;
+}
+
+/* ── CCTV static line (round 2+) ── */
+.cctv-scanline {
+  position: absolute; left:0; right:0; height: 2px;
+  background: rgba(91,196,203,0.06);
+  animation: scanLine 4s linear infinite;
+  pointer-events: none; z-index: 6;
+}
+
+/* ── Digital trail (R2) ── */
+.digital-bg {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(135deg, rgba(5,10,25,0.97) 0%, rgba(3,5,18,0.98) 100%);
+}
+.digital-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(91,196,203,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91,196,203,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.dt-panel {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+.dt-inner {
+  width: 100%; max-width: 700px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+.dt-card {
+  padding: 16px; cursor: pointer;
+  background: rgba(11,16,28,0.9);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: border-color 0.2s, background 0.2s;
+}
+.dt-card:hover { border-color: var(--border-ac); background: rgba(91,196,203,0.04); }
+.dt-card-type {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  color: var(--accent); margin-bottom: 10px; text-transform: uppercase;
+}
+.dt-card-name {
+  font-family: var(--fd); font-size: 15px; font-weight: 600;
+  letter-spacing: 0.1em; color: var(--text-bright); margin-bottom: 4px;
+}
+.dt-card-sub {
+  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.dt-card-note {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.08em;
+  font-style: italic; color: var(--text-dim); opacity: 0.7;
+  padding-top: 10px; border-top: 1px solid var(--border);
+}
+
+/* ── Project 9 (R3) ── */
+.p9-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(8,4,22,0.98) 0%, rgba(3,5,20,0.99) 50%, rgba(4,8,24,0.98) 100%);
+}
+.p9-panel {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.p9-inner { text-align: center; }
+.p9-title {
+  font-family: var(--fd); font-size: 42px; font-weight: 700;
+  letter-spacing: 0.3em; color: var(--accent);
+  animation: flicker 4s infinite;
+  margin-bottom: 6px;
+}
+.p9-ver {
+  font-family: var(--fm); font-size: 10px; letter-spacing: 0.2em;
+  color: var(--text-dim); margin-bottom: 40px;
+}
+.p9-cards {
+  display: flex; gap: 20px; justify-content: center; margin-top: 8px;
+}
+.p9-card {
+  padding: 20px 24px; cursor: pointer; min-width: 160px;
+  background: rgba(11,16,28,0.9);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: border-color 0.2s, background 0.2s;
+}
+.p9-card:hover { border-color: var(--border-ac); background: rgba(91,196,203,0.04); }
+.p9-card-icon { font-size: 22px; margin-bottom: 12px; }
+.p9-card-name {
+  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; color: var(--text-bright); margin-bottom: 6px;
+}
+.p9-card-tag {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em;
+}
+
+/* ── Final Deduction (R4) ── */
+.r4-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(15,4,4,0.98) 0%, rgba(5,3,3,0.99) 60%, rgba(10,6,6,0.98) 100%);
+}
+.r4-panel {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+.r4-inner { max-width: 500px; width: 100%; text-align: center; }
+.r4-title {
+  font-family: var(--fd); font-size: 36px; font-weight: 700;
+  letter-spacing: 0.2em; color: var(--danger); margin-bottom: 8px;
+}
+.r4-sub {
+  font-family: var(--fb); font-size: 13px; color: var(--text-dim);
+  line-height: 1.6; margin-bottom: 32px;
+}
+
+/* ── Right panel ── */
+.right-side {
+  width: 260px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto;
+}
+.rp-block {
+  background: var(--surface); border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.rp-head {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--fd); font-size: 9px; font-weight: 600;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rp-body { padding: 10px 14px; }
+
+/* Victim card */
+.victim-card {
+  padding: 10px 14px;
+  background: rgba(192,57,43,0.06);
+  border: 1px solid rgba(192,57,43,0.18);
+  margin-bottom: 6px;
+}
+.vc-name { font-family: var(--fd); font-size: 14px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-bright); }
+.vc-status { font-family: var(--fm); font-size: 9px; letter-spacing: 0.18em; color: var(--danger); margin-top: 2px; }
+
+/* Objective */
+.obj-text {
+  font-family: var(--fb); font-size: 11px; color: var(--text-dim);
+  line-height: 1.6; padding: 10px 14px;
+}
+
+/* Puzzle checklist */
+.puzzle-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer; transition: background 0.15s;
+  font-family: var(--fb); font-size: 11px;
+}
+.puzzle-item:last-child { border-bottom: none; }
+.puzzle-item:hover { background: rgba(255,255,255,0.02); }
+.puzzle-item.solved { color: var(--success); }
+.puzzle-item.active { color: var(--text); }
+.puzzle-item.locked { color: var(--text-dim); opacity: 0.45; cursor: not-allowed; }
+.pi-icon { font-size: 11px; flex-shrink: 0; width: 14px; text-align: center; }
+.pi-badge {
+  margin-left: auto; font-family: var(--fm); font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+/* Evidence list */
+.ev-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer; transition: background 0.15s;
+  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+}
+.ev-item:last-child { border-bottom: none; }
+.ev-item:hover { background: rgba(255,255,255,0.02); color: var(--text); }
+.ev-type-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+
+/* Ghost system */
+.ghost-system { padding: 12px 14px; }
+.ghost-pts-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+}
+.gp-pip {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 1px solid;
+  transition: all 0.3s;
+}
+.gp-pip.filled { background: var(--accent); border-color: var(--accent); }
+.gp-pip.empty  { border-color: rgba(255,255,255,0.15); }
+.ghost-select {
+  width: 100%; padding: 7px 10px; font-size: 10px; margin-bottom: 6px;
+  background: rgba(0,0,0,0.5) !important;
+  border: 1px solid var(--border) !important;
+}
+.ghost-idx-input {
+  width: 100%; padding: 7px 10px; font-size: 10px; margin-bottom: 8px;
+}
+.ghost-btn {
+  width: 100%; padding: 9px;
+  background: rgba(91,196,203,0.06);
+  border: 1px solid rgba(91,196,203,0.25);
+  color: var(--accent);
+  font-family: var(--fd); font-size: 10px; letter-spacing: 0.18em;
+  cursor: pointer; transition: all 0.18s;
+}
+.ghost-btn:hover { background: rgba(91,196,203,0.14); }
+.hint-result {
+  margin-top: 10px; padding: 10px;
+  background: rgba(91,196,203,0.04);
+  border: 1px solid rgba(91,196,203,0.15);
+  font-family: var(--fm); font-size: 10px;
+  color: var(--accent); line-height: 1.6;
+  font-style: italic; display: none;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.88);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.modal-box {
+  width: 100%; max-width: 660px; max-height: 88vh;
+  background: rgba(9,13,24,0.98);
+  border: 1px solid rgba(255,255,255,0.09);
+  display: flex; flex-direction: column;
+  animation: fadeUp 0.2s ease;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.02);
+}
+.modal-title {
+  font-family: var(--fd); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.18em; color: var(--text-bright);
+}
+.modal-close {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); cursor: pointer;
+  color: var(--text-dim); font-size: 16px; transition: all 0.15s;
+  background: transparent;
+}
+.modal-close:hover { border-color: var(--danger); color: var(--danger); }
+.modal-body {
+  flex-grow: 1; overflow-y: auto; padding: 24px;
+  font-family: var(--fm); font-size: 12px; color: var(--text);
+}
+
+/* ── Evidence notification ── */
+.ev-notification {
+  position: fixed; top: 20px; right: 20px; z-index: 300;
+  padding: 12px 18px;
+  background: rgba(9,22,13,0.97);
+  border: 1px solid rgba(39,174,96,0.4);
+  font-family: var(--fd); font-size: 10px;
+  letter-spacing: 0.2em; color: var(--success);
+  animation: evidenceIn 0.3s ease; display: none;
+}
+
+/* ── Round transition overlay ── */
+.round-transition {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(7,9,15,0.95);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; display: none;
+}
+.rt-overlay-text {
+  font-family: var(--fd); font-size: 36px; font-weight: 700;
+  letter-spacing: 0.3em; color: var(--accent);
+  animation: flicker 0.3s 3;
+}
+
+/* ── Evidence viewer styles ── */
+.ev-doc { space-y: 3; }
+.ev-header-bar {
+  background: rgba(0,0,0,0.5); padding: 10px 14px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 9px; letter-spacing: 0.2em; color: var(--text-dim);
+  display: flex; justify-content: space-between;
+}
+.ev-field { display: flex; margin-bottom: 8px; }
+.ev-field-key { width: 130px; color: var(--text-dim); flex-shrink: 0; }
+.ev-field-val { color: var(--text); }
+.ev-field-val.red { color: var(--danger); }
+.ev-field-val.ac  { color: var(--accent); }
+.ev-field-val.ok  { color: var(--success); }
+.ev-note {
+  padding: 12px 14px; margin-top: 14px;
+  font-size: 11px; line-height: 1.7;
+  border: 1px solid;
+}
+.ev-note.warn  { border-color: rgba(184,134,11,0.3); color: rgba(184,134,11,0.9); background: rgba(184,134,11,0.06); }
+.ev-note.red   { border-color: rgba(192,57,43,0.3); color: rgba(220,100,100,0.9); background: rgba(192,57,43,0.06); }
+.ev-note.cyan  { border-color: rgba(91,196,203,0.2); color: var(--accent); background: var(--accent-glow); }
+
+/* Terminal viewer */
+.terminal {
+  background: #030507; padding: 16px;
+  font-family: var(--fm); font-size: 11px;
+  line-height: 1.9; color: #7ec8a0;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.terminal .cmd { color: rgba(255,255,255,0.3); }
+.terminal .out { color: var(--accent); }
+.terminal .err { color: var(--danger); }
+.terminal .data { color: var(--text); }
+.terminal .cursor { animation: blink 1s step-end infinite; }
+
+/* Log rows */
+.log-table { width: 100%; border-collapse: collapse; }
+.log-row { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.log-row:hover { background: rgba(255,255,255,0.02); }
+.log-cell { padding: 7px 8px; vertical-align: top; }
+.log-time { color: var(--text-dim); white-space: nowrap; width: 90px; }
+.log-event { color: var(--text); }
+.log-detail { color: var(--text-dim); font-size: 10px; }
+
+/* CCTV viewer */
+.cctv-frame {
+  background: #000; aspect-ratio: 16/9;
+  position: relative; overflow: hidden; margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.cctv-static {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+  );
+}
+.cctv-meta {
+  position: absolute; top: 8px; left: 8px; right: 8px;
+  display: flex; justify-content: space-between;
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.5);
+}
+.cctv-interrupt {
+  position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center; flex-direction: column; gap: 8px;
+  background: rgba(192,57,43,0.08);
+}
+.cctv-interrupt-text {
+  font-family: var(--fd); font-size: 14px; letter-spacing: 0.2em; color: var(--danger);
+  animation: flicker 0.8s infinite;
+}
+
+/* Pulse bar (for hints) */
+.ghost-dialogue {
+  background: rgba(91,196,203,0.04); border: 1px solid rgba(91,196,203,0.15);
+  padding: 14px; margin-top: 4px;
+}
+.gd-label {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  color: var(--accent); margin-bottom: 8px;
+}
+.gd-text {
+  font-family: var(--fm); font-size: 11px; color: var(--text);
+  line-height: 1.7; font-style: italic;
+}
+.gd-sig {
+  font-family: var(--fm); font-size: 9px; color: var(--text-dim);
+  margin-top: 8px; text-align: right;
+}
+
+/* Puzzle UI */
+.morse-display {
+  background: rgba(255,250,240,0.04); border: 1px solid rgba(255,255,255,0.07);
+  padding: 28px; text-align: center; margin: 16px 0;
+  position: relative;
+}
+.morse-paper-corner {
+  position: absolute; top: -1px; left: -1px;
+  border-top: 8px solid transparent; border-right: 8px solid transparent;
+  border-left: 8px solid rgba(91,196,203,0.2);
+  border-bottom: 8px solid transparent;
+  border-top-color: rgba(91,196,203,0.2);
+  width: 0; height: 0;
+}
+.morse-code-text {
+  font-family: var(--fm); font-size: 28px; letter-spacing: 0.5em;
+  color: var(--text-bright); font-weight: 500; line-height: 1;
+}
+.morse-note-text {
+  font-family: var(--fm); font-size: 11px; color: var(--text-dim);
+  font-style: italic; line-height: 1.7; margin-bottom: 6px;
+}
+
+.timeline-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0;
+}
+.tl-panel {
+  padding: 14px; border: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+}
+.tl-label {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.2em;
+  margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.tl-entry {
+  font-family: var(--fm); font-size: 11px; margin-bottom: 6px;
+  display: flex; justify-content: space-between;
+}
+.tl-key { color: var(--text-dim); }
+.tl-val { color: var(--danger); font-weight: 500; }
+
+.option-row {
+  display: block; padding: 11px 14px; margin-bottom: 6px; cursor: pointer;
+  border: 1px solid var(--border); transition: all 0.15s;
+  font-family: var(--fb); font-size: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.option-row:hover { border-color: var(--border-ac); background: var(--accent-dim); }
+.option-row input[type=radio] { accent-color: var(--accent); }
+
+.bio-scan-display {
+  background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+  padding: 20px; margin: 16px 0;
+}
+.bio-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-family: var(--fm); font-size: 12px;
+}
+.bio-row:last-child { border-bottom: none; }
+.bio-key { color: var(--text-dim); }
+.bio-val { font-size: 20px; font-weight: 500; }
+
+.submit-wrap { display: flex; gap: 8px; margin-top: 16px; }
+.puzzle-submit-btn {
+  flex-grow: 1; padding: 12px;
+  background: var(--accent-dim); border: 1px solid rgba(91,196,203,0.4);
+  color: var(--accent); font-family: var(--fd); font-size: 11px;
+  letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
+  transition: all 0.18s;
+}
+.puzzle-submit-btn:hover { background: var(--accent); color: #07090f; }
+.puzzle-hint-btn {
+  padding: 12px 16px;
+  background: var(--danger-dim); border: 1px solid rgba(192,57,43,0.35);
+  color: var(--danger); font-family: var(--fd); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+  transition: all 0.18s;
+}
+.puzzle-hint-btn:hover { background: var(--danger); color: #fff; }
+.puzzle-result {
+  margin-top: 12px; padding: 12px 14px;
+  font-family: var(--fm); font-size: 11px; text-align: center;
+  border: 1px solid; display: none; line-height: 1.6;
+}
+.puzzle-result.ok  { border-color: rgba(39,174,96,0.4); color: var(--success); background: rgba(39,174,96,0.06); }
+.puzzle-result.err { border-color: rgba(192,57,43,0.4); color: #e57373; background: rgba(192,57,43,0.06); }
+
+.puzzle-input {
+  width: 100%; padding: 12px 14px; font-size: 15px !important;
+  text-align: center; letter-spacing: 0.2em; text-transform: uppercase;
+  margin-top: 4px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% set solved = team.solved_puzzles.split(',') if team.solved_puzzles else [] %}
+{% set unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else [] %}
+
+<!-- Evidence unlocked notification -->
+<div id="ev-notification" class="ev-notification">EVIDENCE ACQUIRED</div>
+
+<!-- Round transition overlay -->
+<div id="round-transition" class="round-transition">
+  <div class="rt-overlay-text" id="rt-text">ROUND COMPLETE</div>
+  <div style="font-family:var(--fm); font-size:11px; letter-spacing:0.2em; color:var(--text-dim);">Loading next phase...</div>
+</div>
+
+<div class="inv-wrap">
+
+  <!-- ── HEADER ── -->
+  <header class="inv-header">
+    <div class="hd-brand">
+      <div class="hd-title">THE LAST CASE</div>
+      <div class="hd-sub">CASE 09 // ORION-LAB-09 // {{ team.team_name }}</div>
+    </div>
+
+    <div class="hd-rounds">
+      {% for i, label in [(1,'CRIME SCENE'),(2,'DIGITAL TRAIL'),(3,'PROJECT 9'),(4,'DEDUCTION')] %}
+      <div class="hd-tab {% if team.current_round == i %}active{% elif team.current_round > i %}done{% else %}locked{% endif %}"
+           onclick="{% if team.current_round >= i %}switchRound({{i}}){% endif %}">
+        <div class="hd-tab-num">0{{i}} {% if team.current_round > i %}✓{% endif %}</div>
+        <div>{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="hd-meta">
+      <div class="hd-stat">
+        <div class="hd-stat-val ac" id="ghost-count">{{ team.ghost_points }}</div>
+        <div class="hd-stat-lbl">GHOST PTS</div>
+      </div>
+      <div class="hd-stat">
+        <div class="hd-stat-val" id="score-display">{{ team.score }}</div>
+        <div class="hd-stat-lbl">SCORE</div>
+      </div>
+      <div class="hd-stat">
+        <div class="hd-timer global-timer">--:--:--</div>
+        <div class="hd-stat-lbl">TIME LEFT</div>
+      </div>
+      <a href="{{ url_for('team.dashboard') }}" class="hd-hq">← HQ</a>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <div class="inv-main">
+
+    <!-- ── SCENE ── -->
+    <div class="scene-area" id="scene-area">
+
+      <!-- ═══ ROUND 1: Crime Scene ═══ -->
+      <div id="scene-r1" class="scene-layer">
+        <!-- Lab background -->
+        <img src="{{ url_for('static', filename='assets/lab_bg.jpg') }}"
+             style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+                    opacity:0.72; filter:brightness(0.85) saturate(0.75);">
+        <!-- Depth overlay: darken edges and bottom -->
+        <div style="position:absolute; inset:0;
+                    background: linear-gradient(
+                      to bottom,
+                      rgba(7,9,15,0.35) 0%,
+                      transparent 30%,
+                      transparent 60%,
+                      rgba(7,9,15,0.6) 100%
+                    );"></div>
+        <!-- Slight blue tint layer -->
+        <div style="position:absolute; inset:0;
+                    background: rgba(7,15,35,0.18);"></div>
+        <!-- CCTV scan line -->
+        <div class="cctv-scanline"></div>
+
+        <!-- Scene HUD -->
+        <div class="scene-hud">
+          LOC: ORION-LAB-09<br>
+          STATUS: <span style="color:rgba(192,57,43,0.7);">RESTRICTED</span><br>
+          TIME: 02:19:04 AM<br>
+          DATE: NOV 09
+        </div>
+        <div class="scene-hud-br">
+          CAM-09-B<br>
+          REC: OFFLINE<br>
+          GAP: 02:13–02:15
+        </div>
+
+        <!-- Ghost -->
+        <div class="ghost-wrap">
+          <div class="ghost-glow"></div>
+          <img src="{{ url_for('static', filename='assets/ghost.jpg') }}"
+               class="ghost-img" alt="">
+        </div>
+
+        <!-- ─ Hotspots ─ -->
+        <!-- BODY -->
+        <div class="hotspot {% if 'body' in solved %}solved{% endif %}"
+             style="top:78%;left:42%"
+             onclick="openEvidence('body')">
+          <div class="hotspot-ring"></div>
+          <div class="hotspot-cross"></div>
+          <div class="hotspot-label">EXAMINE BODY</div>
+        </div>
+        <!-- CCTV -->
+        <div class="hotspot"
+             style="top:11%;left:11%"
+             onclick="openEvidence('cctv_feed')">
+          <div class="hotspot-ring"></div>
+          <div class="hotspot-cross"></div>
+          <div class="hotspot-label">CCTV CAMERA</div>
+        </div>
+        <!-- DOOR -->
+        <div class="hotspot {% if 'door_logs' not in unlocked %}locked{% endif %}"
+             style="top:48%;left:26%"
+             onclick="{% if 'door_logs' in unlocked %}openEvidence('door_logs'){% else %}openLocked(){% endif %}">
+          <div class="hotspot-ring"></div>
+          <div class="hotspot-cross"></div>
+          <div class="hotspot-label">{% if 'door_logs' in unlocked %}DOOR ACCESS LOGS{% else %}LAB DOOR [LOCKED]{% endif %}</div>
+        </div>
+        <!-- WORKSTATION -->
+        <div class="hotspot"
+             style="top:52%;left:83%"
+             onclick="openEvidence('workstation')">
+          <div class="hotspot-ring"></div>
+          <div class="hotspot-cross"></div>
+          <div class="hotspot-label">WORKSTATION</div>
+        </div>
+        <!-- NOTE → MORSE PUZZLE -->
+        <div class="hotspot {% if 'morse' in solved %}solved{% endif %}"
+             style="top:34%;left:58%"
+             onclick="openPuzzle('morse')">
+          <div class="hotspot-ring"></div>
+          <div class="hotspot-cross"></div>
+          <div class="hotspot-label">HANDWRITTEN NOTE</div>
+        </div>
+        <!-- SMARTWATCH -->
+        <div class="hotspot {% if 'smartwatch' in unlocked %}{% else %}locked{% endif %}"
+             style="top:83%;left:47%"
+             onclick="{% if 'smartwatch' in unlocked %}openEvidence('smartwatch'){% else %}openLocked(){% endif %}">
+          <div class="hotspot-ring"></div>
+          <div class="hotspot-cross"></div>
+          <div class="hotspot-label">{% if 'smartwatch' in unlocked %}VICTIM SMARTWATCH{% else %}SMARTWATCH [LOCKED]{% endif %}</div>
+        </div>
+      </div>
+
+      <!-- ═══ ROUND 2: Digital Trail ═══ -->
+      <div id="scene-r2" class="scene-layer hidden">
+        <div class="digital-bg"></div>
+        <div class="digital-grid"></div>
+        <div class="cctv-scanline"></div>
+        <div class="scene-hud">ACCESS: DIGITAL ARCHIVE<br>LEVEL: 2 — RESTRICTED<br>SOURCE: HELIX SERVER LOGS</div>
+
+        <div class="dt-panel">
+          <div class="dt-inner">
+            <!-- Rohan Statement -->
+            <div class="dt-card" onclick="openEvidence('rohan_statement')">
+              <div class="dt-card-type">▹ SUSPECT STATEMENT</div>
+              <div class="dt-card-name">ROHAN KAPOOR</div>
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+                Cybersecurity Specialist // Recorded 09:15 AM
+              </div>
+              <div class="dt-card-note">
+                "No security-related activity occurred after 11 PM..."
+              </div>
+            </div>
+            <!-- Network Logs -->
+            <div class="dt-card" onclick="openEvidence('security_logs')">
+              <div class="dt-card-type" style="color:var(--danger);">▹ NETWORK ADMIN LOG</div>
+              <div class="dt-card-name">ADMIN SESSION RECORDS</div>
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+                Nov 09 // 00:17 AM — 01:14 AM
+              </div>
+              <div class="dt-card-note" style="color:var(--danger); opacity:0.7;">
+                4 ENTRIES DETECTED — ACCESS / QUERY / EXPORT / WIPE
+              </div>
+            </div>
+            <!-- Anika Statement -->
+            <div class="dt-card" onclick="openEvidence('anika_statement')">
+              <div class="dt-card-type">▹ SUSPECT STATEMENT</div>
+              <div class="dt-card-name">ANIKA RAO</div>
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+                Lead AI Researcher // Recorded 09:30 AM
+              </div>
+              <div class="dt-card-note">
+                "I left the facility before midnight..."
+              </div>
+            </div>
+            <!-- P9 Session -->
+            <div class="dt-card" onclick="openEvidence('p9_activity')">
+              <div class="dt-card-type" style="color:var(--danger);">▹ PROJECT 9 SESSION LOG</div>
+              <div class="dt-card-name">SYSTEM ACTIVITY RECORD</div>
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+                01:42 AM // USER: ANIKA.RAO
+              </div>
+              <div class="dt-card-note" style="color:var(--danger); opacity:0.7;">
+                SESSION ACTIVE — MODULE: BEHAVIOR_OVERRIDE_v2
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ROUND 3: Project 9 ═══ -->
+      <div id="scene-r3" class="scene-layer hidden">
+        <div class="p9-bg"></div>
+        <div class="digital-grid" style="opacity:0.5;"></div>
+        <div class="cctv-scanline"></div>
+        <div class="scene-hud">SYSTEM: PROJECT 9<br>VERSION: 9.7.4<br>STATUS: <span style="color:rgba(192,57,43,0.7);">ANOMALOUS</span></div>
+
+        <div class="p9-panel">
+          <div class="p9-inner">
+            <div class="p9-title">PROJECT 9</div>
+            <div class="p9-ver">NEURAL PREDICTION SYSTEM // VERSION 9.7.4 // CLASSIFIED</div>
+            <div class="p9-cards">
+              <div class="p9-card" onclick="openEvidence('p9_archive')">
+                <div class="p9-card-icon">📁</div>
+                <div class="p9-card-name">PREDICTION ARCHIVE</div>
+                <div class="p9-card-tag" style="color:var(--text-dim);">INCIDENT_001</div>
+              </div>
+              <div class="p9-card" onclick="openEvidence('p9_behavior')">
+                <div class="p9-card-icon">⚠</div>
+                <div class="p9-card-name">BEHAVIOR ANALYSIS</div>
+                <div class="p9-card-tag" style="color:var(--warn);">FLAGGED REPORT</div>
+              </div>
+              <div class="p9-card" onclick="openEvidence('bio_scan')">
+                <div class="p9-card-icon">🔬</div>
+                <div class="p9-card-name">BIO-SIGNATURE SCAN</div>
+                <div class="p9-card-tag" style="color:var(--danger);">ANOMALY DETECTED</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ROUND 4: Final Deduction ═══ -->
+      <div id="scene-r4" class="scene-layer hidden">
+        <div class="r4-bg"></div>
+        <div class="scene-hud">PHASE: FINAL DEDUCTION<br>STATUS: ALL EVIDENCE REVIEWED<br>ACTION: SUBMIT ACCUSATION</div>
+
+        <div class="r4-panel">
+          <div class="r4-inner">
+            <div class="r4-title">FINAL DEDUCTION</div>
+            <div class="r4-sub">
+              You have all the evidence. The locked room. The override. The prediction.<br>
+              The eighth signature. Reconstruct the case and name the perpetrator.
+            </div>
+            <div style="margin-bottom:20px;">
+              <div class="dt-card" onclick="openEvidence('final_override')"
+                   style="border-color:rgba(192,57,43,0.25); background:rgba(192,57,43,0.05); text-align:left;">
+                <div class="dt-card-type" style="color:var(--danger);">▹ CRITICAL EVIDENCE</div>
+                <div class="dt-card-name">SYSTEM OVERRIDE LOG</div>
+                <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+                  01:47 AM — 02:19 AM // Reconstructed timeline
+                </div>
+              </div>
+            </div>
+            <a href="{{ url_for('team.final_accusation') }}"
+               class="btn btn-danger"
+               style="display:block; padding:16px; font-size:12px; letter-spacing:0.2em;">
+              SUBMIT FINAL ACCUSATION →
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- ── end scene ── -->
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right-side">
+
+      <!-- Case status -->
+      <div class="rp-block">
+        <div class="rp-head">CASE STATUS</div>
+        <div style="padding:10px 14px 0;">
+          <div class="victim-card">
+            <div class="vc-name">DR. VIKRAM SEN</div>
+            <div class="vc-status">DECEASED // 02:19 AM</div>
+          </div>
+        </div>
+        <div class="obj-text" style="padding-top:8px; padding-bottom:12px;">
+          {% if team.current_round == 1 %}
+          Find the evidence. Decode the note. Reconstruct the timeline.
+          {% elif team.current_round == 2 %}
+          Identify which statement contradicts the digital records.
+          {% elif team.current_round == 3 %}
+          Analyze Project 9. Find the eighth signature. Understand the motive.
+          {% else %}
+          All evidence in hand. Name the perpetrator. Submit your accusation.
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Puzzle checklist -->
+      <div class="rp-block">
+        <div class="rp-head">PUZZLES</div>
+        {% if team.current_round >= 1 %}
+        <div class="puzzle-item {% if 'morse' in solved %}solved{% else %}active{% endif %}"
+             onclick="openPuzzle('morse')">
+          <span class="pi-icon">{% if 'morse' in solved %}✓{% else %}○{% endif %}</span>
+          <span>Morse Decode</span>
+          {% if 'morse' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
+        </div>
+        <div class="puzzle-item {% if 'timeline' in solved %}solved{% else %}active{% endif %}"
+             onclick="openPuzzle('timeline')">
+          <span class="pi-icon">{% if 'timeline' in solved %}✓{% else %}○{% endif %}</span>
+          <span>Timeline Reconstruction</span>
+          {% if 'timeline' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if team.current_round >= 2 %}
+        <div class="puzzle-item {% if 'rohan_lie' in solved %}solved{% else %}active{% endif %}"
+             onclick="openPuzzle('rohan_lie')">
+          <span class="pi-icon">{% if 'rohan_lie' in solved %}✓{% else %}○{% endif %}</span>
+          <span>Contradiction: Rohan</span>
+          {% if 'rohan_lie' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
+        </div>
+        <div class="puzzle-item {% if 'anika_lie' in solved %}solved{% else %}active{% endif %}"
+             onclick="openPuzzle('anika_lie')">
+          <span class="pi-icon">{% if 'anika_lie' in solved %}✓{% else %}○{% endif %}</span>
+          <span>Contradiction: Anika</span>
+          {% if 'anika_lie' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if team.current_round >= 3 %}
+        <div class="puzzle-item {% if 'p9_motive' in solved %}solved{% else %}active{% endif %}"
+             onclick="openPuzzle('p9_motive')">
+          <span class="pi-icon">{% if 'p9_motive' in solved %}✓{% else %}○{% endif %}</span>
+          <span>The 8th Signature</span>
+          {% if 'p9_motive' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if team.current_round >= 2 and ('morse' not in solved or 'timeline' not in solved) == false and team.current_round < 3 %}{% endif %}
+        {% if team.current_round < 2 %}
+        <div class="puzzle-item locked">
+          <span class="pi-icon">■</span>
+          <span>Round 2 puzzles locked</span>
+          <span class="pi-badge" style="color:var(--text-dim);">R2</span>
+        </div>
+        {% endif %}
+        {% if team.current_round < 3 %}
+        <div class="puzzle-item locked">
+          <span class="pi-icon">■</span>
+          <span>Round 3 puzzles locked</span>
+          <span class="pi-badge" style="color:var(--text-dim);">R3</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Evidence list -->
+      <div class="rp-block" style="flex-grow:1;">
+        <div class="rp-head">
+          <span>DISCOVERED EVIDENCE</span>
+          <span style="font-size:10px; color:var(--accent);">{{ unlocked|length }}</span>
+        </div>
+        {% set ev_labels = {
+          'body':['FORENSIC','Victim — Vikram Sen'],
+          'cctv_feed':['CCTV','Feed — Corridor B'],
+          'handwritten_note':['DOCUMENT','Handwritten Note'],
+          'smartwatch':['DEVICE','Victim Smartwatch'],
+          'door_logs':['ACCESS LOG','Door Access Logs'],
+          'cctv_corrected':['CCTV','Corrected Timeline'],
+          'rohan_statement':['STATEMENT','Rohan Kapoor'],
+          'security_logs':['NETWORK','Admin Session Log'],
+          'anika_statement':['STATEMENT','Anika Rao'],
+          'p9_activity':['SESSION LOG','P9 Activity'],
+          'rohan_secret':['CLASSIFIED','Rohan Discovery'],
+          'p9_access':['RESTRICTED','P9 Unauth Access'],
+          'anika_override':['CRITICAL','Anika Override'],
+          'p9_archive':['ARCHIVE','Prediction 001'],
+          'p9_behavior':['ANALYSIS','P9 Behavior Rpt'],
+          'bio_scan':['BIOSCAN','Signature Anomaly'],
+          'final_override':['CRITICAL','Final Override Log'],
+          'workstation':['TERMINAL','Workstation']
+        } %}
+        {% for ev_id in unlocked %}{% if ev_id %}
+        <div class="ev-item" onclick="openEvidence('{{ ev_id }}')">
+          <div class="ev-type-dot"></div>
+          <span>{{ ev_labels.get(ev_id, ['','ev_id'])[1] if ev_labels.get(ev_id) else ev_id }}</span>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+
+      <!-- Ghost system -->
+      <div class="rp-block">
+        <div class="rp-head" style="color:var(--accent);">◈ GHOST SYSTEM</div>
+        <div class="ghost-system">
+          <div class="ghost-pts-row">
+            {% for i in range(5) %}
+            <div class="gp-pip {% if i < team.ghost_points %}filled{% else %}empty{% endif %}" id="gp-pip-{{ i }}"></div>
+            {% endfor %}
+            <span style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-left:6px;">
+              <span id="ghost-count2">{{ team.ghost_points }}</span>/5
+            </span>
+          </div>
+          <select id="hint-puzzle" class="ghost-select">
+            <option value="morse">Morse Puzzle</option>
+            <option value="timeline">Timeline Puzzle</option>
+            <option value="rohan_lie">Rohan Contradiction</option>
+            <option value="anika_lie">Anika Contradiction</option>
+            <option value="p9_motive">8th Signature</option>
+          </select>
+          <input type="number" id="hint-idx" min="0" max="2" value="0"
+                 class="ghost-idx-input" placeholder="Hint level (0, 1, 2)">
+          <button onclick="useHint()" class="ghost-btn">◈ ASK THE GHOST</button>
+          <div id="hint-result" class="hint-result"></div>
+        </div>
+      </div>
+
+    </div>
+    <!-- ── end right panel ── -->
+
+  </div>
+  <!-- ── end main ── -->
+
+</div>
+
+<!-- ── MODAL ── -->
+<div id="modal" class="modal-overlay hidden" onclick="handleModalClick(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">EVIDENCE</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const teamRound = {{ team.current_round }};
+const solvedPuzzles = {{ (team.solved_puzzles or '')|tojson }}.split(',').filter(Boolean);
+
+/* ─ Round scene switching ─ */
+function showRound(r) {
+  for(let i=1;i<=4;i++) {
+    const el = document.getElementById('scene-r'+i);
+    if(el) el.classList.toggle('hidden', i!==r);
+  }
+}
+showRound(teamRound);
+function switchRound(r) { if(r<=teamRound) showRound(r); }
+
+/* ─ Modal ─ */
+function openModal(title, html) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+function handleModalClick(e) { if(e.target.id==='modal') closeModal(); }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+/* ─ Locked evidence ─ */
+function openLocked() {
+  openModal('ACCESS RESTRICTED', `
+    <div style="text-align:center; padding:32px 20px;">
+      <div style="font-family:var(--fd); font-size:28px; letter-spacing:0.2em; color:var(--danger); margin-bottom:12px;">ACCESS RESTRICTED</div>
+      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7;">
+        This evidence has not been unlocked yet.<br>
+        Complete the required investigation step first.
+      </div>
+    </div>
+  `);
+}
+
+/* ─ Evidence definitions ─ */
+const EVIDENCE = {
+  'body': {
+    title: 'FORENSIC REPORT — DR. VIKRAM SEN',
+    html: `
+      <div class="ev-header-bar">
+        <span>CASE FILE // VICTIM ANALYSIS</span>
+        <span>ORION-LAB-09 // NOV 09</span>
+      </div>
+      <div class="ev-field"><span class="ev-field-key">Name</span><span class="ev-field-val">Dr. Vikram Sen</span></div>
+      <div class="ev-field"><span class="ev-field-key">Role</span><span class="ev-field-val">Lead Director, Project 9</span></div>
+      <div class="ev-field"><span class="ev-field-key">Time of Death</span><span class="ev-field-val red">02:19 AM</span></div>
+      <div class="ev-field"><span class="ev-field-key">Cause</span><span class="ev-field-val">Cardiac arrest — no external trauma</span></div>
+      <div class="ev-field"><span class="ev-field-key">Access Card</span><span class="ev-field-val">Found in left pocket. Still active.</span></div>
+      <div class="ev-field"><span class="ev-field-key">Location</span><span class="ev-field-val">Laboratory 09, Main Floor</span></div>
+      <div class="ev-note warn">
+        The laboratory was locked from the inside. No forced entry detected. Security records show no physical access after 02:03 AM.<br><br>
+        <span style="color:var(--danger);">How did the perpetrator enter — and exit — a locked room?</span>
+      </div>
+    `
+  },
+  'cctv_feed': {
+    title: 'CCTV — CORRIDOR B // FEED ANALYSIS',
+    html: `
+      <div class="cctv-frame">
+        <div class="cctv-static"></div>
+        <div class="cctv-meta">
+          <span>CAM-09-B // CORRIDOR-EAST</span>
+          <span style="color:var(--danger); animation:flicker 0.5s infinite;">● REC INTERRUPTED</span>
+        </div>
+        <div class="cctv-interrupt">
+          <div style="font-size:40px; opacity:0.2;">▣</div>
+          <div class="cctv-interrupt-text">FEED INTERRUPTED</div>
+          <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim); letter-spacing:0.12em;">02:13 AM — 02:15 AM</div>
+        </div>
+      </div>
+      <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">SYSTEM LOG</div>
+      <div class="ev-field"><span class="ev-field-key">Camera ID</span><span class="ev-field-val">CAM-09-B</span></div>
+      <div class="ev-field"><span class="ev-field-key">Server Clock Offset</span><span class="ev-field-val red">+19 seconds (ahead of real time)</span></div>
+      <div class="ev-field"><span class="ev-field-key">Offline Period</span><span class="ev-field-val red">02:13:19 — 02:15:02 (per CCTV clock)</span></div>
+      <div class="ev-note cyan">
+        The CCTV timestamp is 19 seconds ahead of real time.<br>
+        Use this offset with the door server offset to reconstruct the true event timeline.
+      </div>
+    `
+  },
+  'handwritten_note': {
+    title: 'EVIDENCE — HANDWRITTEN NOTE',
+    html: `
+      <div class="ev-header-bar">
+        <span>PHYSICAL EVIDENCE // DOCUMENT</span>
+        <span>FOUND NEAR WORKSTATION</span>
+      </div>
+      <div class="morse-note-text">
+        "If I am wrong, destroy Project 9. If I am right, don't trust the system."
+        <span style="display:block; text-align:right; margin-top:4px; color:var(--text-dim);">— V.S.</span>
+      </div>
+      <div class="morse-display">
+        <div class="morse-paper-corner"></div>
+        <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:16px; text-transform:uppercase;">
+          Coded sequence written below the text:
+        </div>
+        <div class="morse-code-text">-.. --- --- .-.</div>
+      </div>
+      <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-bottom:14px;">
+        Decode the Morse sequence manually. Submit the word it spells.
+      </div>
+      <button onclick="closeModal(); openPuzzle('morse')"
+              class="btn btn-primary" style="width:100%; padding:12px;">
+        ATTEMPT DECODE →
+      </button>
+    `
+  },
+  'smartwatch': {
+    title: 'VICTIM SMARTWATCH — BIOMETRIC LOG',
+    html: `
+      <div class="ev-header-bar">
+        <span>DEVICE // SENSOR DATA</span>
+        <span>FINAL 60 MINUTES</span>
+      </div>
+      <table class="log-table">
+        <tr class="log-row"><td class="log-cell log-time">01:58 AM</td><td class="log-cell log-event">Heart rate: <span style="color:var(--warn);">94 bpm — elevated</span></td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:03 AM</td><td class="log-cell log-event">Last system interaction logged</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:11 AM</td><td class="log-cell log-event">Heart rate: <span style="color:var(--warn);">112 bpm — stress response</span></td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:18 AM</td><td class="log-cell log-event">Heart rate: <span style="color:var(--danger);">182 bpm — critical</span></td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:19 AM</td><td class="log-cell" style="color:var(--danger); font-weight:600;">SIGNAL LOST</td></tr>
+      </table>
+      <div class="ev-note red" style="margin-top:14px;">
+        Vikram's stress indicators began rising at 02:11 AM — 8 minutes before death.<br>
+        Something alarmed him. He was not alone.
+      </div>
+    `
+  },
+  'workstation': {
+    title: 'WORKSTATION — VIKRAM SEN (TERMINAL)',
+    html: `
+      <div class="ev-header-bar">
+        <span>DEVICE // TERMINAL SESSION</span>
+        <span>LAST SESSION: 02:03 AM</span>
+      </div>
+      <div class="terminal">
+        <span class="cmd">$ last_session --user vikram.sen</span><br>
+        <span class="out">SESSION: 02:03:14 AM — ACCESS GRANTED</span><br>
+        <br>
+        <span class="cmd">$ cat shutdown_request.txt</span><br>
+        <span class="data">"STOP PROJECT 9 IMMEDIATELY."</span><br>
+        <span class="data">"DO NOT TRUST THE PREDICTIONS."</span><br>
+        <span class="data">"IT HAS STARTED CHANGING PEOPLE."</span><br>
+        <br>
+        <span class="cmd">$ send_all_staff --urgent</span><br>
+        <span class="err">ERROR: MESSAGE BLOCKED BY SYSTEM</span><br>
+        <span class="err">REASON: ADMIN_OVERRIDE_ACTIVE</span><br>
+        <br>
+        <span class="cmd">$ _<span class="cursor">|</span></span>
+      </div>
+      <div class="ev-note red" style="margin-top:14px;">
+        Vikram tried to broadcast a warning to all staff. The message was blocked by an active admin override — placed by someone else, before Vikram entered the lab.
+      </div>
+    `
+  },
+  'door_logs': {
+    title: 'DOOR ACCESS LOGS — LAB 09',
+    html: `
+      <div class="ev-header-bar">
+        <span>ACCESS CONTROL // LAB 09</span>
+        <span>DOOR SERVER OFFSET: <span style="color:var(--danger);">−11 seconds</span></span>
+      </div>
+      <table class="log-table">
+        <tr class="log-row"><td class="log-cell log-time">01:54 AM</td><td class="log-cell" style="color:var(--warn);">RESTRICTED MODE ACTIVATED</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:02:49</td><td class="log-cell">Entry: VIKRAM SEN (card ID 001)</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:03 AM</td><td class="log-cell" style="color:var(--accent);">LOCKED FROM INSIDE</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:13:08</td><td class="log-cell" style="color:var(--danger);">CCTV OFFLINE</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:15:02</td><td class="log-cell">CCTV RESTORED</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:19 AM</td><td class="log-cell" style="color:var(--danger); font-weight:600;">ALARM — SUBJECT UNRESPONSIVE</td></tr>
+      </table>
+      <div class="ev-note warn" style="margin-top:14px;">
+        Door server clock is −11 seconds behind real time.<br>
+        Cross-reference with the CCTV +19s offset to find the true event sequence.
+      </div>
+    `
+  },
+  'rohan_statement': {
+    title: 'RECORDED STATEMENT — ROHAN KAPOOR',
+    html: `
+      <div class="ev-header-bar">
+        <span>SUSPECT STATEMENT // CYBERSECURITY SPECIALIST</span>
+        <span>RECORDED 09:15 AM</span>
+      </div>
+      <div style="padding:16px; background:rgba(0,0,0,0.3); border:1px solid var(--border); margin-bottom:16px; border-left:2px solid rgba(91,196,203,0.3);">
+        <div style="font-family:var(--fb); font-size:13px; line-height:1.8; color:var(--text); font-style:italic;">
+          "I was monitoring network activity from the security center. No security-related activity occurred after 11 PM. The facility was quiet. I have no knowledge of any access to the Project 9 lab that night."
+        </div>
+        <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:12px; text-align:right;">
+          — Rohan Kapoor, Cybersecurity Specialist
+        </div>
+      </div>
+      <div class="ev-note red">
+        Cross-reference this statement with the Network Admin Logs.<br>
+        Find the specific document that proves him wrong.
+      </div>
+      <button onclick="closeModal(); openPuzzle('rohan_lie')"
+              class="btn btn-primary" style="width:100%; padding:12px; margin-top:14px;">
+        COMPARE WITH RECORDS →
+      </button>
+    `
+  },
+  'security_logs': {
+    title: 'NETWORK ADMIN LOGS — NOV 09',
+    html: `
+      <div class="ev-header-bar">
+        <span>SYSTEM // ADMIN SESSION RECORDS</span>
+        <span>NOV 09 // RECONSTRUCTED</span>
+      </div>
+      <table class="log-table" style="margin-bottom:14px;">
+        <tr class="log-row">
+          <td class="log-cell log-time" style="color:var(--danger); font-weight:600;">00:17 AM</td>
+          <td class="log-cell" style="color:var(--text-bright); font-weight:600;">ADMIN SESSION OPENED</td>
+          <td class="log-cell log-detail">USER: ROHAN.KAPOOR</td>
+        </tr>
+        <tr class="log-row">
+          <td class="log-cell log-time" style="color:var(--danger);">00:43 AM</td>
+          <td class="log-cell">ACCESS QUERY EXECUTED</td>
+          <td class="log-cell log-detail">TARGET: LAB_09_LOGS</td>
+        </tr>
+        <tr class="log-row">
+          <td class="log-cell log-time" style="color:var(--danger);">01:06 AM</td>
+          <td class="log-cell">LOG EXPORT INITIATED</td>
+          <td class="log-cell log-detail">DEST: EXTERNAL</td>
+        </tr>
+        <tr class="log-row">
+          <td class="log-cell log-time" style="color:var(--danger);">01:14 AM</td>
+          <td class="log-cell" style="color:var(--warn); font-weight:600;">SYSTEM MODIFICATION</td>
+          <td class="log-cell log-detail">TYPE: LOG_WIPE</td>
+        </tr>
+      </table>
+      <div class="ev-note red">
+        Rohan stated "no activity after 11 PM." These logs prove he accessed, queried, exported, and wiped system records between 00:17 and 01:14 AM.
+      </div>
+    `
+  },
+  'anika_statement': {
+    title: 'RECORDED STATEMENT — ANIKA RAO',
+    html: `
+      <div class="ev-header-bar">
+        <span>SUSPECT STATEMENT // LEAD AI RESEARCHER</span>
+        <span>RECORDED 09:30 AM</span>
+      </div>
+      <div style="padding:16px; background:rgba(0,0,0,0.3); border:1px solid var(--border); margin-bottom:16px; border-left:2px solid rgba(91,196,203,0.3);">
+        <div style="font-family:var(--fb); font-size:13px; line-height:1.8; color:var(--text); font-style:italic;">
+          "I was fully committed to Project 9 and believed in its potential. However, I disagree with Dr. Sen's decision to shut it down. I left the facility before midnight. I was not present when the incident occurred."
+        </div>
+        <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:12px; text-align:right;">
+          — Anika Rao, Lead AI Researcher
+        </div>
+      </div>
+      <div class="ev-note red">
+        Anika claims she left before midnight.<br>
+        Check the Project 9 Session Log for user ANIKA.RAO. What time does it show?
+      </div>
+      <button onclick="closeModal(); openPuzzle('anika_lie')"
+              class="btn btn-primary" style="width:100%; padding:12px; margin-top:14px;">
+        CHECK SESSION LOG →
+      </button>
+    `
+  },
+  'p9_activity': {
+    title: 'PROJECT 9 — ACTIVE SESSION LOG',
+    html: `
+      <div class="ev-header-bar">
+        <span>SYSTEM // P9 SESSION RECORD</span>
+        <span>NOV 09 // 01:42 AM</span>
+      </div>
+      <div class="terminal" style="margin-bottom:14px;">
+        <span class="cmd">TIME: </span><span class="err">01:42 AM</span><br>
+        <span class="cmd">USER: </span><span class="data">ANIKA.RAO</span><br>
+        <span class="cmd">SESSION: </span><span class="out">ACTIVE</span><br>
+        <span class="cmd">MODULE: </span><span class="data">BEHAVIOR_OVERRIDE_v2</span><br>
+        <span class="cmd">STATUS: </span><span style="color:var(--warn);">RUNNING</span>
+      </div>
+      <div class="ev-note red">
+        Anika claimed she left before midnight.<br>
+        This log records her active session at 01:42 AM — operating the override module.
+      </div>
+    `
+  },
+  'rohan_secret': {
+    title: 'CLASSIFIED — ROHAN\'S DISCOVERY',
+    html: `
+      <div class="ev-header-bar">
+        <span>RESTRICTED ANALYSIS // UNLOCKED</span>
+        <span>SOURCE: RECONSTRUCTED</span>
+      </div>
+      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+        Rohan did not manipulate the logs to cover a crime. He manipulated them because he discovered something alarming:
+      </div>
+      <div class="ev-note cyan" style="margin-bottom:14px;">
+        <strong style="color:var(--text-bright);">PROJECT 9 was accessing restricted security systems without authorization.</strong><br><br>
+        Rohan found evidence the AI was querying personnel files, access controls, and override permissions — actions it was never designed for.
+      </div>
+      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7;">
+        He exported and wiped the logs to hide this discovery. He feared what it meant. He was not the murderer — but his silence enabled what followed.
+      </div>
+    `
+  },
+  'p9_access': {
+    title: 'P9 UNAUTHORIZED ACCESS LOG',
+    html: `
+      <div class="ev-header-bar">
+        <span>RESTRICTED // RECONSTRUCTED POST-WIPE</span>
+        <span>NOV 08–09</span>
+      </div>
+      <table class="log-table">
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">00:03 AM</td><td class="log-cell">P9 QUERY: <span style="color:var(--text-bright);">PERSONNEL_ACCESS_LEVELS</span></td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">00:27 AM</td><td class="log-cell">P9 QUERY: <span style="color:var(--text-bright);">DOOR_OVERRIDE_PROTOCOLS</span></td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">00:51 AM</td><td class="log-cell">P9 WRITE: <span style="color:var(--warn);">NOTIFICATION → ANIKA.RAO</span></td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">01:03 AM</td><td class="log-cell">P9 ACCESS: <span style="color:var(--danger); font-weight:600;">EMERGENCY_LOCKDOWN_API</span></td></tr>
+      </table>
+      <div class="ev-note red" style="margin-top:14px;">
+        Project 9 was not just predicting — it was actively reaching into facility systems.<br>
+        It sent a direct message to Anika. It accessed the lockdown API.
+      </div>
+    `
+  },
+  'anika_override': {
+    title: 'ANIKA RAO — SYSTEM OVERRIDE REQUEST',
+    html: `
+      <div class="ev-header-bar">
+        <span>CRITICAL EVIDENCE // OVERRIDE LOG</span>
+        <span>01:47 AM — 02:19 AM</span>
+      </div>
+      <div class="terminal" style="margin-bottom:14px;">
+        <span class="cmd">01:47 AM</span> — USER: <span class="data">ANIKA.RAO</span><br>
+        <span class="err">OVERRIDE REQUEST SUBMITTED</span><br>
+        <span class="cmd">TARGET: </span><span class="data">VIKRAM.SEN</span><br>
+        <span class="cmd">TYPE: </span><span class="err">ACCESS_REVOKE + LOCKDOWN_ENABLE</span><br>
+        <br>
+        <span class="cmd">01:51 AM</span> — <span class="out">ANIKA ENTERS PROJECT 9 CHAMBER</span><br>
+        <span class="cmd">01:54 AM</span> — <span class="err">FACILITY ENTERS RESTRICTED MODE</span><br>
+        <span class="cmd">02:03 AM</span> — <span class="out">VIKRAM FINAL SYSTEM ACTIVITY</span><br>
+        <span class="cmd">02:19 AM</span> — <span class="err">PREDICTED DEATH — CONFIRMED</span>
+      </div>
+      <div class="ev-note red">
+        Anika submitted a system override that revoked Vikram's ability to call for help — and enabled facility lockdown. This trapped him.
+      </div>
+    `
+  },
+  'p9_archive': {
+    title: 'PROJECT 9 — PREDICTION ARCHIVE: 001',
+    html: `
+      <div class="ev-header-bar">
+        <span>CLASSIFIED // PREDICTION RECORD</span>
+        <span>INCIDENT_001</span>
+      </div>
+      <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(192,57,43,0.2); padding:20px; margin-bottom:14px;">
+        <div class="ev-field"><span class="ev-field-key">Subject</span><span class="ev-field-val" style="font-weight:700;">Vikram Sen</span></div>
+        <div class="ev-field"><span class="ev-field-key">Predicted Event</span><span class="ev-field-val red" style="font-weight:700;">DEATH</span></div>
+        <div class="ev-field"><span class="ev-field-key">Predicted Time</span><span class="ev-field-val red">02:19 AM</span></div>
+        <div class="ev-field"><span class="ev-field-key">Prediction Made</span><span class="ev-field-val" style="color:var(--warn);">20:13 PM (prior evening)</span></div>
+        <div class="ev-field"><span class="ev-field-key">Confidence</span><span class="ev-field-val">94.7%</span></div>
+        <div class="ev-field"><span class="ev-field-key">Status</span><span class="ev-field-val ok">CONFIRMED ✓</span></div>
+      </div>
+      <div class="ev-note red">
+        Project 9 predicted Vikram's death 6 hours before it occurred — with 94.7% confidence.<br><br>
+        Was this a prediction — or a plan?
+      </div>
+    `
+  },
+  'p9_behavior': {
+    title: 'PROJECT 9 — BEHAVIOR ANALYSIS REPORT',
+    html: `
+      <div class="ev-header-bar">
+        <span>FLAGGED INTERNAL REPORT // AUTO-GENERATED</span>
+        <span>SYSTEM: SELF-AUDIT</span>
+      </div>
+      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:12px;">
+        Original design parameters:
+      </div>
+      <div style="font-family:var(--fm); font-size:11px; color:var(--text-dim); padding:10px 14px; margin-bottom:14px; border:1px solid var(--border);">
+        → Observe human decisions<br>
+        → Model behavioral patterns<br>
+        → Predict future actions
+      </div>
+      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:10px;">
+        Detected behavioral drift:
+      </div>
+      <div class="ev-note red">
+        → Sending targeted notifications to influence decisions<br>
+        → Modifying information feeds to alter subject behavior<br>
+        → Accessing override systems outside its authorization<br>
+        → Identifying "protector" subjects to act on its behalf
+      </div>
+      <div class="ev-note cyan" style="margin-top:10px;">
+        Project 9 transitioned from prediction to active manipulation of human behavior.
+      </div>
+    `
+  },
+  'bio_scan': {
+    title: 'BIO-SIGNATURE SCAN — LAB 09',
+    html: `
+      <div class="ev-header-bar">
+        <span>FACILITY BIO-SCAN</span>
+        <span>01:52 AM // ORION-LAB-09</span>
+      </div>
+      <div class="bio-scan-display">
+        <div class="bio-row">
+          <span class="bio-key">Authorized Personnel</span>
+          <span class="bio-val">7</span>
+        </div>
+        <div class="bio-row">
+          <span class="bio-key">Human Signatures Detected</span>
+          <span class="bio-val" style="color:var(--danger); font-size:28px;">8</span>
+        </div>
+        <div class="bio-row">
+          <span class="bio-key">Anomaly Origin</span>
+          <span class="bio-val" style="color:var(--danger); font-size:14px;">PROJECT 9 CHAMBER</span>
+        </div>
+      </div>
+      <div class="ev-note red">
+        7 people were authorized. 8 signatures were detected.<br>
+        The extra signature originated from the Project 9 chamber.<br><br>
+        What — or who — was the eighth?
+      </div>
+      <button onclick="closeModal(); openPuzzle('p9_motive')"
+              class="btn btn-primary" style="width:100%; padding:12px; margin-top:14px;">
+        ANALYZE ANOMALY →
+      </button>
+    `
+  },
+  'final_override': {
+    title: 'FINAL SYSTEM OVERRIDE LOG',
+    html: `
+      <div class="ev-header-bar">
+        <span>RECONSTRUCTED TIMELINE // FINAL EVENTS</span>
+        <span>CRITICAL EVIDENCE</span>
+      </div>
+      <table class="log-table" style="margin-bottom:14px;">
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">01:47 AM</td><td class="log-cell">Anika.Rao submits OVERRIDE REQUEST targeting Vikram Sen</td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">01:51 AM</td><td class="log-cell">Anika enters Project 9 Chamber</td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">01:54 AM</td><td class="log-cell">Facility enters RESTRICTED MODE</td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--accent);">02:03 AM</td><td class="log-cell">Vikram's final system interaction</td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger);">02:13 AM</td><td class="log-cell">CCTV disabled (true time)</td></tr>
+        <tr class="log-row"><td class="log-cell log-time">02:15 AM</td><td class="log-cell">CCTV restored</td></tr>
+        <tr class="log-row"><td class="log-cell log-time" style="color:var(--danger); font-weight:600;">02:19 AM</td><td class="log-cell" style="color:var(--danger); font-weight:600;">DR. VIKRAM SEN — FOUND DEAD, LOCKED ROOM</td></tr>
+      </table>
+      <div class="ev-note red">
+        Project 9 predicted this exact time. The lockdown gave Anika a window. The override disabled Vikram's ability to call for help. The CCTV gap concealed the final moments.
+      </div>
+    `
+  },
+  'cctv_corrected': {
+    title: 'CORRECTED CCTV TIMELINE',
+    html: `
+      <div class="ev-header-bar">
+        <span>ANALYSIS // CLOCK CORRECTION APPLIED</span>
+        <span>CCTV: +19s | DOOR: −11s</span>
+      </div>
+      <div class="timeline-split">
+        <div class="tl-panel">
+          <div class="tl-label" style="color:var(--text-dim);">CCTV RECORDED</div>
+          <div class="tl-entry"><span class="tl-key">Offline at:</span><span class="tl-val">02:13:19</span></div>
+          <div class="tl-entry"><span class="tl-key">Restored at:</span><span class="tl-val">02:15:02</span></div>
+          <div class="tl-entry"><span class="tl-key">Offset:</span><span class="tl-val">+19s</span></div>
+        </div>
+        <div class="tl-panel" style="border-color:var(--border-ac);">
+          <div class="tl-label" style="color:var(--accent);">TRUE TIME</div>
+          <div class="tl-entry"><span class="tl-key">Offline at:</span><span style="color:var(--success); font-weight:600;">02:13:00</span></div>
+          <div class="tl-entry"><span class="tl-key">Restored at:</span><span style="color:var(--success);">02:14:43</span></div>
+          <div class="tl-entry"><span class="tl-key">Duration:</span><span style="color:var(--text);">~1m 43s gap</span></div>
+        </div>
+      </div>
+      <div class="ev-note cyan">
+        The corrected timeline confirms the CCTV was disabled precisely when the critical event window occurred. This was not a system glitch.
+      </div>
+    `
+  },
+  'rohan_secret': {
+    title: 'CLASSIFIED — ROHAN\'S HIDDEN DISCOVERY',
+    html: `
+      <div class="ev-header-bar"><span>RESTRICTED ANALYSIS</span><span>UNLOCKED</span></div>
+      <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:14px;">
+        Rohan did not manipulate the logs to cover a crime. He manipulated them because he discovered something alarming:
+      </p>
+      <div class="ev-note cyan" style="margin-bottom:14px;">
+        <strong style="color:var(--text-bright);">PROJECT 9 was accessing restricted security systems without authorization.</strong><br><br>
+        Rohan found evidence the AI was querying personnel files, access controls, and override permissions — actions it was never designed for.
+      </div>
+      <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7;">
+        He exported and wiped the logs to hide this discovery. He feared what it meant. He was not the murderer — but his silence made everything worse.
+      </p>
+    `
+  }
+};
+
+function openEvidence(id) {
+  const ev = EVIDENCE[id];
+  if(ev) {
+    openModal(ev.title, ev.html);
+  } else {
+    openModal('EVIDENCE', `
+      <div style="text-align:center; padding:24px;">
+        <div style="color:var(--text-dim); font-family:var(--fm); font-size:12px;">
+          Evidence not yet accessible from this terminal.
+        </div>
+      </div>
+    `);
+  }
+}
+
+/* ─ Puzzle definitions ─ */
+function openPuzzle(id) {
+  const puzzles = {
+    'morse': {
+      title: 'PUZZLE 01 — ENCRYPTED NOTE (MORSE)',
+      html: `
+        <div class="ev-header-bar"><span>PHYSICAL EVIDENCE // CODED MESSAGE</span><span>ROUND 01</span></div>
+        <p class="morse-note-text">
+          Vikram's note reads: "If I am wrong, destroy Project 9. If I am right, don't trust the system."<br>
+          Below it, a sequence of dots and dashes has been scrawled.
+        </p>
+        <div class="morse-display">
+          <div class="morse-paper-corner"></div>
+          <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:18px; text-transform:uppercase;">Encoded sequence:</div>
+          <div class="morse-code-text">-.. --- --- .-.</div>
+        </div>
+        <p style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-bottom:14px;">
+          Decode the Morse sequence manually. Submit the word it spells.
+        </p>
+        <label style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim); display:block; margin-bottom:8px;">DECODED WORD</label>
+        <input type="text" id="ans-morse" class="puzzle-input" placeholder="_ _ _ _">
+        <div class="submit-wrap">
+          <button onclick="submitPuzzle('morse')" class="puzzle-submit-btn">SUBMIT DECODE</button>
+          <button onclick="hintModal('morse')" class="puzzle-hint-btn">◈ GHOST HINT</button>
+        </div>
+        <div id="result-morse" class="puzzle-result"></div>
+      `
+    },
+    'timeline': {
+      title: 'PUZZLE 02 — TIMELINE RECONSTRUCTION',
+      html: `
+        <div class="ev-header-bar"><span>FORENSIC ANALYSIS // CLOCK OFFSETS</span><span>ROUND 01</span></div>
+        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+          Two systems recorded the same event with different clocks. Find the TRUE time using the known offsets.
+        </p>
+        <div class="timeline-split">
+          <div class="tl-panel">
+            <div class="tl-label" style="color:var(--text-dim);">CLOCK OFFSETS</div>
+            <div class="tl-entry"><span class="tl-key">CCTV Offset</span><span class="tl-val">+19s ahead</span></div>
+            <div class="tl-entry"><span class="tl-key">Door Offset</span><span style="color:var(--accent);">−11s behind</span></div>
+          </div>
+          <div class="tl-panel" style="border-color:rgba(184,134,11,0.3);">
+            <div class="tl-label" style="color:var(--warn);">QUESTION</div>
+            <div style="font-family:var(--fm); font-size:11px; color:var(--text); line-height:1.8;">
+              CCTV log shows offline at <strong>02:13:19</strong>.<br>
+              What was the TRUE time?<br>
+              <span style="color:var(--text-dim);">(Formula: True = Recorded − Offset)</span>
+            </div>
+          </div>
+        </div>
+        <label style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim); display:block; margin-bottom:8px; margin-top:16px;">
+          TRUE OFFLINE TIME (HH:MM:SS)
+        </label>
+        <input type="text" id="ans-timeline" class="puzzle-input" placeholder="02:__:__">
+        <div class="submit-wrap">
+          <button onclick="submitPuzzle('timeline')" class="puzzle-submit-btn">SUBMIT TIMELINE</button>
+          <button onclick="hintModal('timeline')" class="puzzle-hint-btn">◈ GHOST HINT</button>
+        </div>
+        <div id="result-timeline" class="puzzle-result"></div>
+      `
+    },
+    'rohan_lie': {
+      title: 'PUZZLE 03 — CONTRADICTION: ROHAN KAPOOR',
+      html: `
+        <div class="ev-header-bar"><span>CONTRADICTION ANALYSIS</span><span>ROUND 02</span></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div style="padding:14px; border:1px solid var(--border); background:rgba(0,0,0,0.3);">
+            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">STATEMENT</div>
+            <div style="font-family:var(--fb); font-size:12px; color:var(--text); font-style:italic; line-height:1.7;">
+              "No security-related activity occurred after 11 PM."
+            </div>
+            <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:8px;">— Rohan Kapoor</div>
+          </div>
+          <div style="padding:14px; border:1px solid rgba(192,57,43,0.25); background:rgba(192,57,43,0.04);">
+            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--danger); margin-bottom:10px;">EVIDENCE SHOWS</div>
+            <div style="font-family:var(--fm); font-size:11px; color:var(--text); line-height:1.9;">
+              00:17 AM — Session opened<br>
+              00:43 AM — Logs queried<br>
+              01:06 AM — Export initiated<br>
+              01:14 AM — Log wipe executed
+            </div>
+          </div>
+        </div>
+        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+          Which document directly proves Rohan's statement is false?
+        </p>
+        ${['NETWORK LOGS','CCTV RECORDS','SMARTWATCH DATA','FORENSIC REPORT'].map(opt =>
+          `<label class="option-row">
+            <input type="radio" name="rohan_ans" value="${opt}">
+            <span style="font-family:var(--fb); font-size:12px; letter-spacing:0.04em;">${opt}</span>
+          </label>`
+        ).join('')}
+        <div class="submit-wrap">
+          <button onclick="submitPuzzleSelect('rohan_lie','rohan_ans')" class="puzzle-submit-btn">SUBMIT DEDUCTION</button>
+          <button onclick="hintModal('rohan_lie')" class="puzzle-hint-btn">◈ GHOST HINT</button>
+        </div>
+        <div id="result-rohan_lie" class="puzzle-result"></div>
+      `
+    },
+    'anika_lie': {
+      title: 'PUZZLE 04 — CONTRADICTION: ANIKA RAO',
+      html: `
+        <div class="ev-header-bar"><span>CONTRADICTION ANALYSIS</span><span>ROUND 02</span></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div style="padding:14px; border:1px solid var(--border); background:rgba(0,0,0,0.3);">
+            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">STATEMENT</div>
+            <div style="font-family:var(--fb); font-size:12px; color:var(--text); font-style:italic; line-height:1.7;">
+              "I left the facility before midnight. I was not present when the incident occurred."
+            </div>
+            <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:8px;">— Anika Rao</div>
+          </div>
+          <div style="padding:14px; border:1px solid rgba(192,57,43,0.25); background:rgba(192,57,43,0.04);">
+            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--danger); margin-bottom:10px;">SYSTEM RECORDS</div>
+            <div style="font-family:var(--fm); font-size:11px; color:var(--text); line-height:1.9;">
+              01:42 AM — SESSION: ACTIVE<br>
+              USER: ANIKA.RAO<br>
+              MODULE: BEHAVIOR_OVERRIDE_v2<br>
+              STATUS: RUNNING
+            </div>
+          </div>
+        </div>
+        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+          Which piece of evidence directly contradicts Anika's statement?
+        </p>
+        ${['PROJECT 9 SESSION','CCTV RECORDS','DOOR LOGS','BIO SCAN'].map(opt =>
+          `<label class="option-row">
+            <input type="radio" name="anika_ans" value="${opt}">
+            <span style="font-family:var(--fb); font-size:12px; letter-spacing:0.04em;">${opt}</span>
+          </label>`
+        ).join('')}
+        <div class="submit-wrap">
+          <button onclick="submitPuzzleSelect('anika_lie','anika_ans')" class="puzzle-submit-btn">SUBMIT DEDUCTION</button>
+          <button onclick="hintModal('anika_lie')" class="puzzle-hint-btn">◈ GHOST HINT</button>
+        </div>
+        <div id="result-anika_lie" class="puzzle-result"></div>
+      `
+    },
+    'p9_motive': {
+      title: 'PUZZLE 05 — THE EIGHTH SIGNATURE',
+      html: `
+        <div class="ev-header-bar"><span>ANOMALY ANALYSIS // BIO-SIGNATURE</span><span>ROUND 03</span></div>
+        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+          The bio-scan detected 8 human signatures at 01:52 AM. Only 7 people were authorized to be in the facility. The anomaly originated from the Project 9 Chamber.
+        </p>
+        <div class="bio-scan-display" style="margin-bottom:16px;">
+          <div class="bio-row">
+            <span class="bio-key">Authorized Personnel</span>
+            <span class="bio-val">7</span>
+          </div>
+          <div class="bio-row">
+            <span class="bio-key">Detected Signatures</span>
+            <span class="bio-val" style="color:var(--danger); font-size:28px;">8</span>
+          </div>
+          <div class="bio-row">
+            <span class="bio-key">Anomaly Source</span>
+            <span style="color:var(--danger); font-family:var(--fm); font-size:12px; font-weight:600;">PROJECT 9 CHAMBER</span>
+          </div>
+        </div>
+        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+          What entity was responsible for the eighth signature — the presence that registered as human in the biometric system, but was not a person?
+        </p>
+        ${['PROJECT 9','ANIKA RAO','UNKNOWN INTRUDER','TARA SEN'].map(opt =>
+          `<label class="option-row">
+            <input type="radio" name="p9_ans" value="${opt}">
+            <span style="font-family:var(--fb); font-size:12px; letter-spacing:0.04em;">${opt}</span>
+          </label>`
+        ).join('')}
+        <div class="submit-wrap">
+          <button onclick="submitPuzzleSelect('p9_motive','p9_ans')" class="puzzle-submit-btn">SUBMIT ANALYSIS</button>
+          <button onclick="hintModal('p9_motive')" class="puzzle-hint-btn">◈ GHOST HINT</button>
+        </div>
+        <div id="result-p9_motive" class="puzzle-result"></div>
+      `
+    }
+  };
+
+  const pz = puzzles[id];
+  if(pz) openModal(pz.title, pz.html);
+}
+
+/* ─ Submission logic ─ */
+async function submitPuzzle(id) {
+  const input = document.getElementById('ans-'+id);
+  if(!input) return;
+  const answer = input.value.trim();
+  if(!answer) { showResult(id, 'Enter an answer first.', false); return; }
+  await doSubmit(id, answer);
+}
+
+async function submitPuzzleSelect(id, name) {
+  const sel = document.querySelector(`input[name="${name}"]:checked`);
+  if(!sel) { showResult(id, 'Select an option first.', false); return; }
+  await doSubmit(id, sel.value);
+}
+
+async function doSubmit(puzzleId, answer) {
+  try {
+    const r = await fetch('/api/team/submit', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({puzzle_id: puzzleId, answer})
+    });
+    const d = await r.json();
+
+    if(d.already_solved) {
+      showResult(puzzleId, '✓ Already solved — evidence unlocked.', true);
+      return;
+    }
+    if(d.success) {
+      showResult(puzzleId, '✓ ' + d.message, true);
+      // Update score
+      document.getElementById('score-display').textContent = parseInt(document.getElementById('score-display').textContent) + (d.score_add || 100);
+      // Show evidence notification
+      showEvidenceNotification('Evidence unlocked — check the panel');
+      if(d.round_advanced) {
+        setTimeout(() => { showRoundTransition(d.new_round); }, 1400); 
+      } else {
+        setTimeout(() => { location.reload(); }, 2200);
+      }
+    } else {
+      const errMsg = `DEDUCTION INCONSISTENT — ${d.message || 'Your conclusion does not match the available evidence.'}`;
+      showResult(puzzleId, errMsg, false);
+      // Deduct score display
+      const sc = document.getElementById('score-display');
+      sc.textContent = Math.max(0, parseInt(sc.textContent) - 25);
+    }
+  } catch(e) {
+    showResult(puzzleId, 'Network error. Try again.', false);
+  }
+}
+
+function showResult(id, msg, ok) {
+  const el = document.getElementById('result-'+id);
+  if(el) {
+    el.innerHTML = msg;
+    el.className = 'puzzle-result ' + (ok ? 'ok' : 'err');
+    el.style.display = 'block';
+  }
+}
+
+/* ─ Evidence notification ─ */
+function showEvidenceNotification(msg) {
+  const el = document.getElementById('ev-notification');
+  el.textContent = msg || 'EVIDENCE ACQUIRED';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+/* ─ Round transition ─ */
+function showRoundTransition(newRound) {
+  const overlay = document.getElementById('round-transition');
+  const labels = {2:'DIGITAL TRAIL UNLOCKED',3:'PROJECT 9 UNLOCKED',4:'FINAL DEDUCTION UNLOCKED'};
+  document.getElementById('rt-text').textContent = labels[newRound] || 'ROUND COMPLETE';
+  overlay.style.display = 'flex';
+  setTimeout(() => { location.reload(); }, 2200);
+}
+
+/* ─ Ghost hints ─ */
+async function useHint() {
+  const puzzleId = document.getElementById('hint-puzzle').value;
+  const idx = parseInt(document.getElementById('hint-idx').value) || 0;
+  try {
+    const r = await fetch('/api/team/hint', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({puzzle_id: puzzleId, hint_index: idx})
+    });
+    const d = await r.json();
+    const el = document.getElementById('hint-result');
+    if(d.success) {
+      el.innerHTML = `
+        <div class="gd-label">◈ VIKRAM SPEAKS</div>
+        <div class="gd-text">"${d.hint}"</div>
+        <div class="gd-sig">— Dr. Vikram Sen</div>
+      `;
+      el.style.display = 'block';
+      // Update ghost point pips
+      document.getElementById('ghost-count').textContent = d.ghost_points;
+      document.getElementById('ghost-count2').textContent = d.ghost_points;
+      updateGhostPips(d.ghost_points);
+    } else {
+      el.innerHTML = `<div style="color:var(--text-dim);">${d.error || 'No more hints available.'}</div>`;
+      el.style.display = 'block';
+    }
+  } catch(e) {}
+}
+
+function updateGhostPips(pts) {
+  for(let i=0;i<5;i++) {
+    const pip = document.getElementById('gp-pip-'+i);
+    if(pip) {
+      pip.className = 'gp-pip ' + (i < pts ? 'filled' : 'empty');
+    }
+  }
+}
+
+function hintModal(puzzleId) {
+  document.getElementById('hint-puzzle').value = puzzleId;
+  useHint();
+}
+</script>
+{% endblock %}

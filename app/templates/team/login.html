@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.login-scene {
+  position: fixed; inset: 0;
+  background-image: url("{{ url_for('static', filename='assets/lab_bg.jpg') }}");
+  background-size: cover; background-position: center 30%;
+  z-index: -2;
+}
+.login-scene::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(7,9,15,0.75) 0%, rgba(7,9,15,0.55) 50%, rgba(7,9,15,0.85) 100%),
+    linear-gradient(to right, rgba(7,9,15,0.6) 0%, transparent 100%);
+}
+.login-scene-blur {
+  position: fixed; inset: 0; z-index: -1;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.login-wrap {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 24px;
+}
+.login-card {
+  width: 100%; max-width: 420px;
+  background: rgba(9, 13, 22, 0.93);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: fadeUp 0.5s ease;
+}
+.login-topbar {
+  width: 100%; max-width: 420px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.status-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--fm); font-size: 9px;
+  letter-spacing: 0.12em; color: var(--text-dim);
+}
+.status-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--success);
+  animation: pulseSubtle 2.5s infinite;
+}
+.login-header {
+  padding: 32px 36px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.login-body {
+  padding: 28px 36px 36px;
+}
+.facility-tag {
+  font-family: var(--fm); font-size: 9px;
+  letter-spacing: 0.28em; color: var(--text-dim);
+  text-transform: uppercase; margin-bottom: 20px;
+}
+.login-title {
+  font-family: var(--fd); font-size: 38px;
+  font-weight: 700; letter-spacing: 0.16em;
+  color: var(--text-bright); line-height: 1;
+  margin-bottom: 6px;
+}
+.login-sub {
+  font-family: var(--fm); font-size: 11px;
+  letter-spacing: 0.18em; color: var(--accent);
+  opacity: 0.75;
+}
+.section-tag {
+  font-family: var(--fm); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(91,196,203,0.5);
+  margin-bottom: 22px;
+}
+.field-wrap { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-family: var(--fd); font-size: 9px;
+  font-weight: 600; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--text-dim);
+  margin-bottom: 7px;
+}
+.field-input {
+  width: 100%; padding: 11px 14px;
+  background: rgba(0,0,0,0.55) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  color: var(--text) !important;
+  font-family: var(--fm) !important; font-size: 13px;
+  transition: border-color 0.2s;
+}
+.field-input:focus {
+  border-color: rgba(91,196,203,0.32) !important;
+  box-shadow: 0 0 0 2px rgba(91,196,203,0.04) !important;
+}
+.field-input.code-input {
+  text-align: center; letter-spacing: 0.25em;
+  font-size: 15px; text-transform: uppercase;
+}
+.submit-btn {
+  width: 100%; padding: 13px;
+  background: rgba(91,196,203,0.08);
+  border: 1px solid rgba(91,196,203,0.38);
+  color: var(--accent);
+  font-family: var(--fd); font-size: 11px;
+  font-weight: 600; letter-spacing: 0.22em;
+  text-transform: uppercase; cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-top: 8px;
+}
+.submit-btn:hover {
+  background: var(--accent);
+  color: #07090f;
+}
+.login-footer {
+  padding: 16px 36px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.error-bar {
+  padding: 10px 14px; margin-bottom: 18px;
+  background: rgba(192,57,43,0.07);
+  border: 1px solid rgba(192,57,43,0.28);
+  font-family: var(--fm); font-size: 11px;
+  color: #e57373; letter-spacing: 0.05em;
+}
+.page-footer {
+  width: 100%; max-width: 420px;
+  margin-top: 14px;
+  display: flex; justify-content: space-between;
+}
+.page-footer span {
+  font-family: var(--fm); font-size: 9px;
+  letter-spacing: 0.1em; color: var(--text-dim);
+  opacity: 0.4;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-scene"></div>
+<div class="login-scene-blur"></div>
+
+<div class="login-wrap">
+
+  <div class="login-topbar">
+    <div class="status-indicator">
+      ORION-LAB-09 // ONLINE
+    </div>
+    <div class="status-indicator">
+      <span class="status-dot"></span>
+      SECURE CHANNEL
+    </div>
+  </div>
+
+  <div class="login-card">
+    <div class="login-header">
+      <div class="facility-tag">HELIX DYNAMICS // RESTRICTED ACCESS PORTAL</div>
+      <div class="login-title">THE LAST CASE</div>
+      <div class="login-sub">CASE 09 — THE SILENT SIGNAL</div>
+    </div>
+
+    <div class="login-body">
+      <div class="section-tag">INVESTIGATOR ACCESS</div>
+
+      {% if error %}
+      <div class="error-bar">⚠ &nbsp;{{ error }}</div>
+      {% endif %}
+
+      <form method="POST">
+        <div class="field-wrap">
+          <label class="field-label">Team Access Code</label>
+          <input type="text" name="team_code" class="field-input code-input"
+                 placeholder="GHOST-XXXX" autocomplete="off" spellcheck="false" required>
+        </div>
+        <div class="field-wrap">
+          <label class="field-label">Password</label>
+          <input type="password" name="password" class="field-input"
+                 placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="submit-btn">
+          ENTER INVESTIGATION &nbsp;→
+        </button>
+      </form>
+    </div>
+
+    <div class="login-footer">
+      <span style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+        New team?
+      </span>
+      <a href="{{ url_for('team.register') }}"
+         style="font-family:var(--fm); font-size:10px; color:var(--accent);
+                text-decoration:none; letter-spacing:0.08em;">
+        REGISTER TEAM →
+      </a>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>ORION RESEARCH FACILITY</span>
+    <span>HELIX DYNAMICS</span>
+    <span>AUTHORIZED PERSONNEL ONLY</span>
+  </div>
+
+</div>
+{% endblock %}

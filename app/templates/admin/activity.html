@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="min-height:100vh; display:flex; flex-direction:column;
+            background:var(--bg); padding:18px 22px;">
+
+  <!-- Header -->
+  <header style="display:flex; align-items:center; justify-content:space-between;
+                 padding-bottom:14px; border-bottom:1px solid rgba(192,57,43,0.2);
+                 margin-bottom:20px; flex-shrink:0;">
+    <div>
+      <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.28em;
+                  color:var(--danger); margin-bottom:4px; opacity:0.7;">
+        HELIX DYNAMICS // ADMINISTRATOR
+      </div>
+      <div style="font-family:var(--fd); font-size:20px; font-weight:700;
+                  letter-spacing:0.18em; color:var(--text-bright);">
+        ACTIVITY LOG — CASE 09
+      </div>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost" style="font-size:10px;">← TEAMS</a>
+  </header>
+
+  <!-- Nav -->
+  <div style="display:flex; gap:0; margin-bottom:20px; flex-shrink:0;">
+    <a href="{{ url_for('admin.dashboard') }}"
+       style="padding:6px 16px; font-family:var(--fd); font-size:10px; letter-spacing:0.16em;
+              text-transform:uppercase; text-decoration:none; border:1px solid var(--border);
+              color:var(--text-dim); margin-right:-1px; transition:all 0.15s;"
+       onmouseover="this.style.color='var(--accent)'"
+       onmouseout="this.style.color='var(--text-dim)'">TEAMS</a>
+    <a href="{{ url_for('admin.leaderboard') }}"
+       style="padding:6px 16px; font-family:var(--fd); font-size:10px; letter-spacing:0.16em;
+              text-transform:uppercase; text-decoration:none; border:1px solid var(--border);
+              color:var(--text-dim); margin-right:-1px; transition:all 0.15s;"
+       onmouseover="this.style.color='var(--accent)'"
+       onmouseout="this.style.color='var(--text-dim)'">LEADERBOARD</a>
+    <a href="{{ url_for('admin.activity') }}"
+       style="padding:6px 16px; font-family:var(--fd); font-size:10px; letter-spacing:0.16em;
+              text-transform:uppercase; text-decoration:none;
+              border:1px solid var(--border-ac); color:var(--text-bright);
+              background:var(--accent-dim);">ACTIVITY</a>
+  </div>
+
+  <!-- Activity table -->
+  <div style="flex-grow:1; overflow-y:auto; background:rgba(9,13,24,0.97); border:1px solid var(--border);">
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border); position:sticky; top:0;
+                   background:rgba(9,13,24,0.99);">
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-align:left; padding:10px 14px; font-weight:600; width:90px;">TIME</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-align:left; padding:10px 14px; font-weight:600; width:180px;">TEAM</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-align:left; padding:10px 14px; font-weight:600; width:160px;">ACTION</th>
+          <th style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim);
+                     text-align:left; padding:10px 14px; font-weight:600;">TARGET</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03); transition:background 0.15s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.02)'"
+            onmouseout="this.style.background='transparent'">
+          <td style="padding:9px 14px; font-family:var(--fm); font-size:10px; color:var(--text-dim); white-space:nowrap;">
+            {{ log.timestamp.strftime('%H:%M:%S') }}
+          </td>
+          <td style="padding:9px 14px; font-family:var(--fm); font-size:10px; color:var(--text);">
+            {{ teams.get(log.team_id, '—') }}
+          </td>
+          <td style="padding:9px 14px;">
+            <span style="font-family:var(--fm); font-size:9px; letter-spacing:0.12em;
+                         padding:2px 8px; border:1px solid;
+                         color:{% if log.action == 'PUZZLE_SOLVED' %}var(--success){% elif log.action == 'WRONG_ANSWER' %}var(--danger){% elif log.action == 'HINT_USED' %}var(--accent){% elif log.action == 'FINAL_SUBMISSION' %}rgba(212,175,55,0.9){% else %}var(--text-dim){% endif %};
+                         border-color:{% if log.action == 'PUZZLE_SOLVED' %}rgba(39,174,96,0.3){% elif log.action == 'WRONG_ANSWER' %}rgba(192,57,43,0.3){% elif log.action == 'HINT_USED' %}var(--border-ac){% elif log.action == 'FINAL_SUBMISSION' %}rgba(212,175,55,0.3){% else %}var(--border){% endif %};">
+              {{ log.action }}
+            </span>
+          </td>
+          <td style="padding:9px 14px; font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+            {{ log.target_id or '—' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" style="padding:48px; text-align:center;
+              font-family:var(--fd); font-size:14px; letter-spacing:0.2em; color:var(--text-dim);">
+            NO ACTIVITY RECORDED
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

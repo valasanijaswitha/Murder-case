@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 24px;">
+  <div style="width:100%; max-width:480px; background:rgba(9,13,22,0.97); border:1px solid var(--border); animation:fadeUp 0.5s ease;">
+
+    <div style="padding:28px 36px 24px; border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:16px;">
+        HELIX DYNAMICS // ACCESS GRANTED
+      </div>
+      <div style="font-family:var(--fd); font-size:28px; font-weight:700; letter-spacing:0.14em; color:var(--success); margin-bottom:4px;">
+        TEAM REGISTERED
+      </div>
+      <div style="font-family:var(--fm); font-size:10px; letter-spacing:0.16em; color:var(--text-dim);">
+        CASE 09 — ORION RESEARCH FACILITY
+      </div>
+    </div>
+
+    <div style="padding:28px 36px;">
+
+      <div style="background:rgba(39,174,96,0.06); border:1px solid rgba(39,174,96,0.22); padding:16px 20px; margin-bottom:24px;">
+        <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--success); margin-bottom:12px;">
+          INVESTIGATOR CREDENTIALS
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-family:var(--fm); font-size:11px; color:var(--text-dim);">Team:</span>
+          <span style="font-family:var(--fd); font-size:15px; font-weight:700; color:var(--text-bright); letter-spacing:0.1em;">{{ team.team_name }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-family:var(--fm); font-size:11px; color:var(--text-dim);">Investigator 1:</span>
+          <span style="font-family:var(--fm); font-size:12px; color:var(--text);">{{ team.player1_name }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <span style="font-family:var(--fm); font-size:11px; color:var(--text-dim);">Investigator 2:</span>
+          <span style="font-family:var(--fm); font-size:12px; color:var(--text);">{{ team.player2_name }}</span>
+        </div>
+
+        <div style="border-top:1px solid rgba(39,174,96,0.15); padding-top:14px;">
+          <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim); margin-bottom:8px;">ACCESS CODE</div>
+          <div style="font-family:var(--fm); font-size:22px; font-weight:500; letter-spacing:0.3em; color:var(--accent); text-align:center; padding:10px 0;">
+            {{ team_code }}
+          </div>
+          <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); text-align:center; opacity:0.6; letter-spacing:0.08em;">
+            Record this code — you will need it to log back in
+          </div>
+        </div>
+      </div>
+
+      <a href="{{ url_for('team.login') }}"
+         style="display:block; width:100%; padding:13px; text-align:center;
+                background:rgba(91,196,203,0.08); border:1px solid rgba(91,196,203,0.38);
+                color:var(--accent); font-family:var(--fd); font-size:11px;
+                font-weight:600; letter-spacing:0.22em; text-transform:uppercase;
+                text-decoration:none; transition:background 0.2s, color 0.2s;"
+         onmouseover="this.style.background='var(--accent)'; this.style.color='#07090f';"
+         onmouseout="this.style.background='rgba(91,196,203,0.08)'; this.style.color='var(--accent)';">
+        ENTER INVESTIGATION →
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

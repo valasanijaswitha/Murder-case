@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.dash-wrap {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  padding: 20px 24px;
+  background: var(--bg);
+}
+/* ── Top nav ── */
+.top-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px; flex-shrink: 0;
+}
+.nav-brand .case-num {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.28em;
+  color: var(--text-dim); margin-bottom: 4px;
+}
+.nav-brand .case-name {
+  font-family: var(--fd); font-size: 18px; font-weight: 700;
+  letter-spacing: 0.16em; color: var(--text-bright);
+}
+
+/* ── Round timeline ── */
+.round-timeline {
+  display: flex; align-items: center; gap: 0;
+}
+.rt-item {
+  display: flex; align-items: center; gap: 0;
+}
+.rt-node {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 6px 18px;
+  border: 1px solid;
+  cursor: default;
+  position: relative;
+  transition: all 0.2s;
+}
+.rt-node.active {
+  border-color: var(--border-ac);
+  background: var(--accent-dim);
+}
+.rt-node.done {
+  border-color: rgba(39,174,96,0.3);
+  background: rgba(39,174,96,0.06);
+}
+.rt-node.locked {
+  border-color: rgba(255,255,255,0.04);
+  background: transparent; opacity: 0.35;
+}
+.rt-num {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.18em;
+  margin-bottom: 2px;
+}
+.rt-node.active  .rt-num { color: var(--accent); }
+.rt-node.done    .rt-num { color: var(--success); }
+.rt-node.locked  .rt-num { color: var(--text-dim); }
+.rt-label {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.16em;
+  font-weight: 600; white-space: nowrap;
+}
+.rt-node.active  .rt-label { color: var(--text-bright); }
+.rt-node.done    .rt-label { color: rgba(39,174,96,0.8); }
+.rt-node.locked  .rt-label { color: var(--text-dim); }
+.rt-connector {
+  width: 24px; height: 1px;
+  background: var(--border);
+}
+.rt-connector.done-line { background: rgba(39,174,96,0.25); }
+
+/* ── Timer ── */
+.timer-display {
+  text-align: right;
+}
+.timer-value {
+  font-family: var(--fm); font-size: 20px; font-weight: 400;
+  letter-spacing: 0.08em; color: var(--text-bright);
+  line-height: 1;
+}
+.timer-label {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.2em;
+  color: var(--text-dim); margin-top: 4px;
+}
+
+/* ── Main grid ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr 220px;
+  gap: 20px;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* ── Left: Team card ── */
+.team-card { padding: 20px; }
+.tc-label {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.22em;
+  color: var(--text-dim); margin-bottom: 16px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.tc-name {
+  font-family: var(--fd); font-size: 20px; font-weight: 700;
+  letter-spacing: 0.12em; color: var(--text-bright); margin-bottom: 4px;
+}
+.tc-players {
+  font-family: var(--fm); font-size: 11px; color: var(--text-dim);
+  line-height: 1.8; margin-bottom: 16px;
+}
+.tc-code {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.16em;
+  color: var(--text-dim); opacity: 0.5;
+}
+.stat-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 16px;
+}
+.stat-box {
+  padding: 12px 10px; text-align: center;
+  background: var(--surface-mid);
+  border: 1px solid var(--border);
+}
+.stat-val {
+  font-family: var(--fd); font-size: 22px; font-weight: 700;
+  color: var(--text-bright); line-height: 1; margin-bottom: 4px;
+}
+.stat-val.accent { color: var(--accent); }
+.stat-lbl {
+  font-family: var(--fd); font-size: 8px; letter-spacing: 0.18em;
+  color: var(--text-dim); text-transform: uppercase;
+}
+.action-list { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+.action-link {
+  display: block; padding: 10px 14px; text-align: center;
+  font-family: var(--fd); font-size: 10px; letter-spacing: 0.16em;
+  font-weight: 600; text-decoration: none; text-transform: uppercase;
+  border: 1px solid; transition: all 0.18s; cursor: pointer;
+}
+
+/* ── Center: Investigation status ── */
+.center-panel { padding: 24px; display: flex; flex-direction: column; }
+.cp-round {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.22em;
+  color: var(--text-dim); margin-bottom: 6px;
+}
+.cp-objective {
+  font-family: var(--fd); font-size: 22px; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--text-bright);
+  margin-bottom: 6px; line-height: 1.2;
+}
+.cp-desc {
+  font-family: var(--fb); font-size: 12px; color: var(--text-dim);
+  line-height: 1.6; max-width: 520px; margin-bottom: 24px;
+}
+.puzzle-list { flex-grow: 1; }
+.pl-header {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.22em;
+  color: var(--text-dim); padding-bottom: 10px;
+  border-bottom: 1px solid var(--border); margin-bottom: 12px;
+}
+.puzzle-row {
+  display: flex; align-items: center;
+  padding: 10px 14px; margin-bottom: 6px;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.puzzle-row.solved { border-color: rgba(39,174,96,0.25); background: rgba(39,174,96,0.04); }
+.puzzle-row.active { border-color: var(--border-ac); }
+.puzzle-row.locked { opacity: 0.35; }
+.pr-indicator {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; flex-shrink: 0; margin-right: 12px;
+  border: 1px solid;
+}
+.pr-indicator.solved { border-color: var(--success); color: var(--success); }
+.pr-indicator.active { border-color: var(--accent); color: var(--accent); }
+.pr-indicator.locked { border-color: var(--text-dim); color: var(--text-dim); }
+.pr-name {
+  font-family: var(--fb); font-size: 12px; flex-grow: 1;
+}
+.puzzle-row.solved .pr-name { color: rgba(39,174,96,0.85); }
+.puzzle-row.active .pr-name { color: var(--text-bright); }
+.puzzle-row.locked .pr-name { color: var(--text-dim); }
+.pr-status {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.14em;
+}
+.pr-status.solved { color: var(--success); }
+.pr-status.locked { color: var(--text-dim); }
+
+/* ── Right: Evidence ── */
+.right-panel { padding: 20px; }
+.ev-list { margin-top: 12px; }
+.ev-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+}
+.ev-row:last-child { border-bottom: none; }
+.ev-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  animation: pulseSubtle 3s infinite;
+}
+.ghost-panel {
+  margin-top: 16px; padding: 14px;
+  background: rgba(91,196,203,0.03);
+  border: 1px solid rgba(91,196,203,0.12);
+}
+.ghost-dots {
+  display: flex; gap: 5px; margin-top: 8px;
+}
+.ghost-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  border: 1px solid;
+}
+.ghost-dot.filled { background: var(--accent); border-color: var(--accent); }
+.ghost-dot.empty  { border-color: var(--text-dim); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set solved = team.solved_puzzles.split(',') if team.solved_puzzles else [] %}
+{% set unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else [] %}
+
+<div class="dash-wrap">
+
+  <!-- TOP NAV -->
+  <header class="top-nav">
+    <div class="nav-brand">
+      <div class="case-num">CASE 09 // ORION RESEARCH FACILITY // RESTRICTED</div>
+      <div class="case-name">THE LAST CASE — THE SILENT SIGNAL</div>
+    </div>
+
+    <!-- Round Timeline -->
+    <div class="round-timeline">
+      {% for i, label in [(1,'CRIME SCENE'),(2,'DIGITAL TRAIL'),(3,'PROJECT 9'),(4,'FINAL DEDUCTION')] %}
+      <div class="rt-item">
+        {% if i > 1 %}
+        <div class="rt-connector {% if team.current_round > i-1 %}done-line{% endif %}"></div>
+        {% endif %}
+        <div class="rt-node {% if team.current_round == i %}active{% elif team.current_round > i %}done{% else %}locked{% endif %}">
+          <div class="rt-num">0{{ i }} {% if team.current_round > i %}✓{% endif %}</div>
+          <div class="rt-label">{{ label }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="timer-display">
+      <div class="timer-value global-timer">--:--:--</div>
+      <div class="timer-label">TIME REMAINING</div>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <div class="dash-grid">
+
+    <!-- LEFT: Team identity -->
+    <div class="panel team-card" style="align-self:start;">
+      <div class="tc-label">TEAM IDENTITY</div>
+      <div class="tc-name">{{ team.team_name }}</div>
+      <div class="tc-players">{{ team.player1_name }}<br>{{ team.player2_name }}</div>
+      <div class="tc-code">CODE: {{ team.team_code }}</div>
+
+      <div class="stat-row" style="margin-top:16px;">
+        <div class="stat-box">
+          <div class="stat-val">{{ team.score }}</div>
+          <div class="stat-lbl">Score</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val accent">{{ team.ghost_points }}</div>
+          <div class="stat-lbl">Ghost Pts</div>
+        </div>
+      </div>
+
+      <div class="action-list">
+        <a href="{{ url_for('team.investigation') }}"
+           class="action-link btn-primary" style="background:var(--accent-dim); border-color:rgba(91,196,203,0.38); color:var(--accent);">
+          INVESTIGATION SCENE
+        </a>
+        <a href="{{ url_for('team.case_file') }}"
+           class="action-link" style="border-color:var(--border); color:var(--text-dim);">
+          EVIDENCE BOARD
+        </a>
+        {% if team.current_round >= 4 %}
+        <a href="{{ url_for('team.final_accusation') }}"
+           class="action-link" style="background:var(--danger-dim); border-color:rgba(192,57,43,0.45); color:var(--danger);">
+          FINAL ACCUSATION
+        </a>
+        {% endif %}
+        <a href="{{ url_for('team.logout') }}"
+           class="action-link" style="border-color:transparent; color:var(--text-dim); opacity:0.4; font-size:9px;">
+          LOGOUT
+        </a>
+      </div>
+    </div>
+
+    <!-- CENTER: Investigation status -->
+    <div class="panel center-panel">
+      <div class="cp-round">ACTIVE INVESTIGATION — ROUND 0{{ team.current_round }}</div>
+
+      {% if team.current_round == 1 %}
+      <div class="cp-objective">WHAT ACTUALLY HAPPENED?</div>
+      <div class="cp-desc">Examine the crime scene. Vikram Sen is dead — cardiac arrest, locked room, no external trauma. Something in this laboratory tells a different story. Find the body, check the CCTV, decode the note.</div>
+      {% elif team.current_round == 2 %}
+      <div class="cp-objective">WHO IS LYING?</div>
+      <div class="cp-desc">You have the digital trail. Two people gave statements that don't match the records. Identify the contradictions, find who is covering something up, and determine what they're hiding.</div>
+      {% elif team.current_round == 3 %}
+      <div class="cp-objective">WHAT WAS PROJECT 9?</div>
+      <div class="cp-desc">Access the Project 9 archives. The prediction data is alarming. Something in this system reached far beyond its original design parameters. Understand what it became.</div>
+      {% else %}
+      <div class="cp-objective" style="color:var(--danger);">WHO KILLED VIKRAM SEN?</div>
+      <div class="cp-desc">You have all the pieces. The locked room. The override. The prediction. The eighth signature. Reconstruct the case and submit your final accusation.</div>
+      {% endif %}
+
+      <div class="puzzle-list">
+        <div class="pl-header">PUZZLE STATUS — CASE PROGRESS</div>
+        {% for pid, label, rnd in [
+          ('morse','Encrypted Note — Morse Decode',1),
+          ('timeline','System Timeline Reconstruction',1),
+          ('rohan_lie','Contradiction: Rohan Kapoor',2),
+          ('anika_lie','Contradiction: Anika Rao',2),
+          ('p9_motive','The Eighth Signature',3)] %}
+        {% if pid in solved %}
+        <div class="puzzle-row solved">
+          <div class="pr-indicator solved">✓</div>
+          <span class="pr-name">{{ label }}</span>
+          <span class="pr-status solved">SOLVED</span>
+        </div>
+        {% elif team.current_round >= rnd %}
+        <div class="puzzle-row active">
+          <div class="pr-indicator active">○</div>
+          <span class="pr-name">{{ label }}</span>
+          <span class="pr-status" style="color:var(--accent); font-size:9px;">ACTIVE</span>
+        </div>
+        {% else %}
+        <div class="puzzle-row locked">
+          <div class="pr-indicator locked">■</div>
+          <span class="pr-name">{{ label }}</span>
+          <span class="pr-status locked">LOCKED</span>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- RIGHT: Evidence & Ghost -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-self:start;">
+
+      <div class="panel right-panel">
+        <div class="tc-label" style="margin-bottom:6px;">CASE STATUS</div>
+        <div style="padding:12px; background:rgba(192,57,43,0.06); border:1px solid rgba(192,57,43,0.2); margin-bottom:12px;">
+          <div style="font-family:var(--fd); font-size:13px; font-weight:700; letter-spacing:0.12em; color:var(--text-bright);">DR. VIKRAM SEN</div>
+          <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.16em; color:var(--danger); margin-top:2px;">DECEASED // 02:19 AM</div>
+        </div>
+        <div class="tc-label" style="margin-bottom:8px;">DISCOVERED EVIDENCE</div>
+        <div class="ev-list">
+          {% set ev_labels = {
+            'body':'Victim — Dr. Vikram Sen',
+            'cctv_feed':'CCTV Feed, Corridor B',
+            'handwritten_note':'Handwritten Note',
+            'smartwatch':'Victim Smartwatch',
+            'door_logs':'Door Access Logs',
+            'cctv_corrected':'Corrected CCTV Timeline',
+            'rohan_statement':'Statement: Rohan Kapoor',
+            'security_logs':'Network Admin Logs',
+            'anika_statement':'Statement: Anika Rao',
+            'p9_activity':'Project 9 Session Log',
+            'rohan_secret':"Rohan's Hidden Discovery",
+            'p9_access':'P9 Unauthorized Access',
+            'anika_override':'Anika Override Request',
+            'p9_archive':'Prediction Archive 001',
+            'p9_behavior':'P9 Behavior Analysis',
+            'bio_scan':'Bio-Signature Scan',
+            'final_override':'Final System Override',
+            'workstation':'Workstation Terminal'
+          } %}
+          {% for ev_id in unlocked %}{% if ev_id %}
+          <div class="ev-row">
+            <div class="ev-dot"></div>
+            {{ ev_labels.get(ev_id, ev_id) }}
+          </div>
+          {% endif %}{% endfor %}
+          {% if not unlocked %}
+          <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim); padding:8px 0;">No evidence yet</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="panel ghost-panel" style="padding:16px;">
+        <div class="tc-label" style="margin-bottom:8px; color:var(--accent);">◈ GHOST SYSTEM</div>
+        <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-bottom:10px; line-height:1.5;">
+          Ghost Points grant access to investigation hints. Each costs 1 point and −50 score.
+        </div>
+        <div class="ghost-dots">
+          {% for i in range(5) %}
+          <div class="ghost-dot {% if i < team.ghost_points %}filled{% else %}empty{% endif %}"></div>
+          {% endfor %}
+          <span style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-left:8px;">{{ team.ghost_points }} / 5</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

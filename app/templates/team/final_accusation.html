@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.acc-wrap {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  padding: 20px 24px;
+}
+.acc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  margin-bottom: 24px; flex-shrink: 0;
+}
+.acc-main {
+  max-width: 860px; width: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 20px;
+  padding-bottom: 40px;
+}
+/* Report document top */
+.report-doc {
+  background: rgba(9,13,24,0.97);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.report-letterhead {
+  padding: 20px 28px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.report-title-block .org {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.28em;
+  color: var(--text-dim); margin-bottom: 8px;
+}
+.report-title-block .doc-title {
+  font-family: var(--fd); font-size: 28px; font-weight: 700;
+  letter-spacing: 0.16em; color: var(--danger);
+}
+.report-title-block .case-ref {
+  font-family: var(--fm); font-size: 11px; letter-spacing: 0.14em;
+  color: var(--text-dim); margin-top: 4px;
+}
+.report-meta {
+  text-align: right;
+  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+  line-height: 1.9;
+}
+.report-body { padding: 28px; }
+
+/* Section */
+.section-block {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+.section-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.section-num {
+  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  color: var(--text-dim); margin-bottom: 6px;
+}
+.section-title {
+  font-family: var(--fd); font-size: 16px; font-weight: 700;
+  letter-spacing: 0.14em; color: var(--text-bright); margin-bottom: 14px;
+}
+
+/* Suspect grid */
+.suspect-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.suspect-card {
+  padding: 14px; cursor: pointer;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+  transition: all 0.18s;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.suspect-card:hover { border-color: var(--border-ac); background: var(--accent-dim); }
+.suspect-card input[type=radio] { accent-color: var(--danger); margin-top: 2px; flex-shrink: 0; }
+.suspect-card.selected {
+  border-color: rgba(192,57,43,0.5);
+  background: rgba(192,57,43,0.08);
+}
+.suspect-name {
+  font-family: var(--fd); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--text-bright); margin-bottom: 2px;
+}
+.suspect-role {
+  font-family: var(--fm); font-size: 9px; color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+/* Text fields */
+.report-textarea {
+  width: 100%; padding: 12px 14px;
+  background: rgba(0,0,0,0.4) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  font-family: var(--fb) !important;
+  font-size: 12px; line-height: 1.7;
+  resize: vertical; min-height: 80px;
+}
+.report-textarea:focus {
+  border-color: var(--border-ac) !important;
+}
+.field-label {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.22em;
+  font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 7px;
+}
+
+/* Evidence checkboxes */
+.evidence-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.ev-check-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+}
+.ev-check-item:hover { border-color: var(--border-ac); color: var(--text); }
+.ev-check-item input[type=checkbox] { accent-color: var(--accent); }
+
+/* Submit */
+.submit-section { padding-top: 8px; }
+.warning-note {
+  font-family: var(--fm); font-size: 10px; letter-spacing: 0.1em;
+  color: var(--text-dim); text-align: center; margin-top: 10px; opacity: 0.5;
+}
+.submit-btn-full {
+  width: 100%; padding: 16px;
+  background: rgba(192,57,43,0.1);
+  border: 1px solid rgba(192,57,43,0.4);
+  color: var(--danger);
+  font-family: var(--fd); font-size: 12px;
+  font-weight: 600; letter-spacing: 0.22em;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.2s;
+}
+.submit-btn-full:hover { background: var(--danger); color: #fff; }
+
+/* Error */
+.submit-error {
+  margin-top: 14px; padding: 12px 16px; display: none;
+  background: rgba(192,57,43,0.07); border: 1px solid rgba(192,57,43,0.3);
+  font-family: var(--fm); font-size: 11px; color: #e57373; text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="acc-wrap">
+
+  <!-- Header -->
+  <header class="acc-header">
+    <div>
+      <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:4px;">
+        ORION RESEARCH FACILITY // CASE 09
+      </div>
+      <div style="font-family:var(--fd); font-size:16px; font-weight:700; letter-spacing:0.16em; color:var(--text-bright);">
+        FINAL ACCUSATION REPORT
+      </div>
+    </div>
+    <div style="display:flex; gap:16px; align-items:center;">
+      <div style="text-align:right;">
+        <div class="global-timer" style="font-family:var(--fm); font-size:16px; color:var(--text-bright);">--:--:--</div>
+        <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim);">TIME REMAINING</div>
+      </div>
+      <a href="{{ url_for('team.investigation') }}" class="btn btn-ghost" style="font-size:10px;">← INVESTIGATION</a>
+    </div>
+  </header>
+
+  <!-- Report document -->
+  <div class="acc-main">
+    <div class="report-doc">
+
+      <!-- Letterhead -->
+      <div class="report-letterhead">
+        <div class="report-title-block">
+          <div class="org">HELIX DYNAMICS // INVESTIGATION DIVISION</div>
+          <div class="doc-title">FINAL DEDUCTION</div>
+          <div class="case-ref">CASE 09: THE SILENT SIGNAL // {{ team.team_name }}</div>
+        </div>
+        <div class="report-meta">
+          SCORE: {{ team.score }}<br>
+          ROUND: 04 — FINAL<br>
+          REF: ORN-09-ACCUSATION
+        </div>
+      </div>
+
+      <div class="report-body">
+        <form id="accusation-form">
+
+          <!-- WHO -->
+          <div class="section-block">
+            <div class="section-num">SECTION 01</div>
+            <div class="section-title">WHO KILLED DR. VIKRAM SEN?</div>
+            <div class="suspect-grid">
+              {% for name, role in [
+                ('ANIKA RAO','Lead AI Researcher'),
+                ('ROHAN KAPOOR','Cybersecurity Specialist'),
+                ('MEERA THOMAS','Lab Technician'),
+                ('ARJUN MALHOTRA','Research Associate'),
+                ('KABIR SHAH','Security Officer'),
+                ('TARA SEN','Administrative Director')
+              ] %}
+              <label class="suspect-card" id="sc-{{ loop.index }}"
+                     onclick="selectSuspect(this)">
+                <input type="radio" name="who" value="{{ name }}" required>
+                <div>
+                  <div class="suspect-name">{{ name }}</div>
+                  <div class="suspect-role">{{ role }}</div>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- HOW -->
+          <div class="section-block">
+            <div class="section-num">SECTION 02</div>
+            <div class="section-title">HOW DID THE MURDER OCCUR?</div>
+            <label class="field-label">EXPLAIN THE LOCKED-ROOM MECHANISM AND THE SYSTEM OVERRIDE</label>
+            <textarea name="how" class="report-textarea"
+                      placeholder="Describe how access was obtained, how the override was used, and how the perpetrator avoided leaving physical evidence..." required></textarea>
+          </div>
+
+          <!-- WHY -->
+          <div class="section-block">
+            <div class="section-num">SECTION 03</div>
+            <div class="section-title">WHY WAS VIKRAM KILLED?</div>
+            <label class="field-label">EXPLAIN THE MOTIVE</label>
+            <textarea name="why" class="report-textarea"
+                      placeholder="Why did the perpetrator want to prevent Vikram from shutting down Project 9..." required></textarea>
+          </div>
+
+          <!-- EVIDENCE -->
+          <div class="section-block">
+            <div class="section-num">SECTION 04</div>
+            <div class="section-title">SUPPORTING EVIDENCE</div>
+            <label class="field-label">SELECT ALL EVIDENCE THAT SUPPORTS YOUR CONCLUSION</label>
+            <div class="evidence-grid">
+              {% for ev in [
+                'Prediction Archive 001',
+                'Anika Override Request',
+                'Network Admin Logs',
+                'P9 Session Log',
+                'Bio Signature Scan',
+                'Final Override Log',
+                'Workstation Terminal',
+                'Smartwatch Data'
+              ] %}
+              <label class="ev-check-item">
+                <input type="checkbox" name="evidence" value="{{ ev }}">
+                {{ ev }}
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- DEEPER TRUTH -->
+          <div class="section-block">
+            <div class="section-num">SECTION 05</div>
+            <div class="section-title">WHAT WAS PROJECT 9 ACTUALLY DOING?</div>
+            <label class="field-label">BASED ON THE PREDICTION ARCHIVES AND BEHAVIOR ANALYSIS — EXPLAIN PROJECT 9'S TRUE ROLE</label>
+            <textarea name="truth" class="report-textarea"
+                      placeholder="Was Project 9 merely predicting, or was it actively shaping outcomes? Explain what the system had become..." required></textarea>
+          </div>
+
+          <!-- SUBMIT -->
+          <div class="submit-section">
+            <button type="button" onclick="submitAccusation()" class="submit-btn-full">
+              SUBMIT FINAL ACCUSATION REPORT →
+            </button>
+            <div class="warning-note">
+              This action is permanent and cannot be undone. Ensure all sections are complete before submitting.
+            </div>
+            <div id="submit-error" class="submit-error"></div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function selectSuspect(el) {
+  document.querySelectorAll('.suspect-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function submitAccusation() {
+  const form = document.getElementById('accusation-form');
+  const who = document.querySelector('input[name="who"]:checked');
+  const how = form.querySelector('[name="how"]').value.trim();
+  const why = form.querySelector('[name="why"]').value.trim();
+  const truth = form.querySelector('[name="truth"]').value.trim();
+  const evidence = [...form.querySelectorAll('input[name="evidence"]:checked')].map(e => e.value);
+
+  const errEl = document.getElementById('submit-error');
+
+  if (!who || !how || !why || !truth) {
+    errEl.textContent = 'SUBMISSION INCOMPLETE — All sections must be filled before submitting your accusation report.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/team/final', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({who: who.value, how, why, truth, evidence})
+    });
+    const d = await r.json();
+    if (d.success) {
+      window.location = '{{ url_for("team.reveal") }}';
+    } else {
+      errEl.textContent = 'Submission error. Please try again.';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error. Check your connection and try again.';
+    errEl.style.display = 'block';
+  }
+}
+</script>
+{% endblock %}

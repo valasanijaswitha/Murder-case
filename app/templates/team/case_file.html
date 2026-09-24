@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+{% set unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else [] %}
+{% set ev_data = {
+  'body': ('FORENSIC','Victim — Dr. Vikram Sen','Cardiac arrest, 02:19 AM. Locked room, no forced entry.'),
+  'cctv_feed': ('CCTV','Feed — Corridor B','Interrupted 02:13–02:15 AM. Clock offset +19 seconds.'),
+  'handwritten_note': ('DOCUMENT','Handwritten Note','Morse coded message found near the terminal.'),
+  'smartwatch': ('BIOMETRIC','Victim Smartwatch','Stress spike 02:11 AM, signal lost 02:19 AM.'),
+  'door_logs': ('ACCESS LOG','Door Access Log — Lab 09','Door server offset −11s. Last entry 02:03 AM.'),
+  'cctv_corrected': ('TIMELINE','Corrected CCTV Timeline','True CCTV cutoff: 02:13:00 AM.'),
+  'rohan_statement': ('STATEMENT','Statement — Rohan Kapoor','Claims no activity after 11 PM.'),
+  'security_logs': ('NETWORK','Network Admin Logs','4 admin entries: 00:17–01:14 AM. User: ROHAN.KAPOOR.'),
+  'anika_statement': ('STATEMENT','Statement — Anika Rao','Claims she left before midnight.'),
+  'p9_activity': ('SESSION LOG','P9 Session Activity','ANIKA.RAO active at 01:42 AM on BEHAVIOR_OVERRIDE_v2.'),
+  'rohan_secret': ('CLASSIFIED','Rohan — Hidden Discovery','Found P9 accessing restricted security systems.'),
+  'p9_access': ('RESTRICTED','P9 Unauthorized Access','P9 queried door overrides and messaged Anika.'),
+  'anika_override': ('CRITICAL','Anika Override Request','Override submitted 01:47 AM targeting Vikram Sen.'),
+  'p9_archive': ('PROJECT 9','Prediction Archive 001','P9 predicted Vikram death at 02:19 AM — confidence 94.7%.'),
+  'p9_behavior': ('PROJECT 9','P9 Behavior Analysis','Shifted from prediction to active behavioral manipulation.'),
+  'bio_scan': ('BIOMETRIC','Bio-Signature Scan','8 signatures detected, 7 authorized. Anomaly: P9 Chamber.'),
+  'final_override': ('CRITICAL','Final System Override','Full reconstructed timeline: 01:47–02:19 AM.'),
+  'workstation': ('TERMINAL','Workstation — Vikram Sen','Blocked message: "DO NOT TRUST THE PREDICTIONS."')
+} %}
+{% set order = ['CRITICAL','PROJECT 9','FORENSIC','BIOMETRIC','ACCESS LOG','NETWORK','SESSION LOG','CCTV','TIMELINE','DOCUMENT','STATEMENT','RESTRICTED','CLASSIFIED'] %}
+
+<div style="min-height:100vh; display:flex; flex-direction:column; background:var(--bg); padding:20px 24px;">
+
+  <!-- Header -->
+  <header style="display:flex; align-items:center; justify-content:space-between;
+                 padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:24px;">
+    <div>
+      <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:4px;">
+        CASE 09 // EVIDENCE ARCHIVE
+      </div>
+      <div style="font-family:var(--fd); font-size:20px; font-weight:700; letter-spacing:0.16em; color:var(--text-bright);">
+        EVIDENCE BOARD
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+        {{ (unlocked|reject('equalto','')|list)|length }} evidence item(s) collected
+      </div>
+      <a href="{{ url_for('team.investigation') }}" class="btn btn-ghost" style="font-size:10px;">← INVESTIGATION</a>
+    </div>
+  </header>
+
+  <!-- Evidence grid by category -->
+  {% if not unlocked or (unlocked|reject('equalto','')|list|length == 0) %}
+  <div style="flex-grow:1; display:flex; align-items:center; justify-content:center;">
+    <div style="text-align:center; opacity:0.35;">
+      <div style="font-family:var(--fd); font-size:28px; letter-spacing:0.2em; margin-bottom:12px;">NO EVIDENCE</div>
+      <div style="font-family:var(--fm); font-size:11px; letter-spacing:0.14em; color:var(--text-dim);">
+        Begin the investigation to collect evidence.
+      </div>
+    </div>
+  </div>
+  {% else %}
+
+  <div style="flex-grow:1;">
+    {% for cat in order %}
+    {% set items = [] %}
+    {% for ev_id in unlocked %}
+      {% if ev_id and ev_data.get(ev_id) and ev_data[ev_id][0] == cat %}
+        {% set _ = items.append(ev_id) %}
+      {% endif %}
+    {% endfor %}
+    {% if items %}
+    <div style="margin-bottom:28px;">
+      <!-- Category header -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <div style="width:4px; height:4px; border-radius:50%;
+                    background:{% if cat == 'CRITICAL' %}var(--danger){% elif cat == 'PROJECT 9' %}var(--accent){% elif cat == 'STATEMENT' %}rgba(184,134,11,0.8){% else %}rgba(255,255,255,0.2){% endif %};"></div>
+        <div style="font-family:var(--fd); font-size:9px; font-weight:600; letter-spacing:0.24em;
+                    color:var(--text-dim); text-transform:uppercase;">{{ cat }}</div>
+        <div style="flex-grow:1; height:1px; background:var(--border);"></div>
+        <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim);">{{ items|length }}</div>
+      </div>
+
+      <!-- Cards row -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px;">
+        {% for ev_id in items %}
+        {% set ev = ev_data[ev_id] %}
+        <div onclick="window.location='{{ url_for('team.investigation') }}'"
+             style="padding:14px; cursor:pointer;
+                    background:rgba(9,13,24,0.97);
+                    border:1px solid {% if ev[0] == 'CRITICAL' %}rgba(192,57,43,0.25){% elif ev[0] == 'PROJECT 9' %}rgba(91,196,203,0.15){% else %}var(--border){% endif %};
+                    transition:border-color 0.18s, background 0.18s;
+                    animation:fadeUp 0.4s ease;"
+             onmouseover="this.style.borderColor='var(--border-ac)'; this.style.background='rgba(91,196,203,0.04)'"
+             onmouseout="this.style.borderColor='{% if ev[0] == 'CRITICAL' %}rgba(192,57,43,0.25){% elif ev[0] == 'PROJECT 9' %}rgba(91,196,203,0.15){% else %}var(--border){% endif %}'; this.style.background='rgba(9,13,24,0.97)'">
+          <div style="font-family:var(--fm); font-size:8px; letter-spacing:0.2em; margin-bottom:8px;
+                      color:{% if ev[0] == 'CRITICAL' %}var(--danger){% elif ev[0] == 'PROJECT 9' %}var(--accent){% elif ev[0] == 'STATEMENT' %}rgba(184,134,11,0.8){% else %}var(--text-dim){% endif %};">
+            {{ ev[0] }}
+          </div>
+          <div style="font-family:var(--fd); font-size:13px; font-weight:700; letter-spacing:0.08em;
+                      color:var(--text-bright); margin-bottom:6px; line-height:1.2;">
+            {{ ev[1] }}
+          </div>
+          <div style="font-family:var(--fb); font-size:11px; color:var(--text-dim); line-height:1.5;">
+            {{ ev[2] }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.reveal-wrap {
+  min-height: 100vh;
+  background: #03040a;
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 24px;
+}
+.reveal-inner {
+  max-width: 700px; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+
+/* Sequence lines */
+.seq-line {
+  opacity: 0; margin-bottom: 0;
+  transition: opacity 0.6s ease;
+}
+.seq-line.visible { opacity: 1; animation: fadeUp 0.7s ease; }
+
+.reveal-line-sm {
+  font-family: var(--fm); font-size: 12px; letter-spacing: 0.2em;
+  color: var(--text-dim); text-transform: uppercase; margin-bottom: 20px;
+}
+.reveal-line-md {
+  font-family: var(--fd); font-size: 22px; font-weight: 600;
+  letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 24px;
+}
+.reveal-line-lg {
+  font-family: var(--fd); font-size: 38px; font-weight: 700;
+  letter-spacing: 0.25em; color: var(--danger); margin-bottom: 32px;
+}
+.reveal-line-ac {
+  font-family: var(--fd); font-size: 28px; font-weight: 700;
+  letter-spacing: 0.2em; color: var(--accent); margin-bottom: 32px;
+}
+.reveal-divider {
+  width: 120px; height: 1px;
+  background: var(--border); margin: 20px auto;
+}
+
+/* Final reveal box */
+.reveal-box {
+  width: 100%; opacity: 0; display: none;
+  background: rgba(9,13,24,0.98);
+  border: 1px solid rgba(192,57,43,0.3);
+  padding: 32px;
+  animation: fadeUp 0.8s ease forwards;
+}
+.reveal-box.show { display: block; opacity: 1; }
+
+.reveal-box-title {
+  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.3em; color: var(--danger); margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.story-block {
+  text-align: left; margin-bottom: 20px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+}
+.story-block-label {
+  font-family: var(--fd); font-size: 9px; letter-spacing: 0.22em;
+  color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase;
+}
+.story-block-text {
+  font-family: var(--fb); font-size: 12px; line-height: 1.8;
+  color: var(--text);
+}
+
+/* Score breakdown */
+.score-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-family: var(--fm); font-size: 11px;
+}
+.score-row:last-child { border-bottom: none; }
+.score-label { color: var(--text-dim); }
+.score-val { font-weight: 600; }
+.score-val.pos { color: var(--success); }
+.score-val.neg { color: var(--danger); }
+
+.final-score {
+  padding: 16px 0;
+  border-top: 1px solid var(--border-ac);
+  margin-top: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.fs-label {
+  font-family: var(--fd); font-size: 14px; font-weight: 700;
+  letter-spacing: 0.18em; color: var(--text-bright);
+}
+.fs-val {
+  font-family: var(--fd); font-size: 32px; font-weight: 700;
+  color: var(--accent);
+}
+
+.return-btn {
+  display: inline-block; margin-top: 24px; padding: 12px 32px;
+  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.12); color: var(--text-dim);
+  transition: all 0.2s;
+}
+.return-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* P9 status indicator */
+.p9-status {
+  width: 100%; padding: 14px 20px;
+  background: rgba(192,57,43,0.06);
+  border: 1px solid rgba(192,57,43,0.2);
+  margin-bottom: 20px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.p9-status-label {
+  font-family: var(--fm); font-size: 10px; letter-spacing: 0.18em;
+  color: var(--text-dim);
+}
+.p9-status-val {
+  font-family: var(--fd); font-size: 11px; letter-spacing: 0.2em;
+  color: var(--danger); animation: pulseSubtle 2s infinite;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reveal-wrap">
+  <div class="reveal-inner">
+
+    <div class="seq-line reveal-line-sm" id="line-1">CASE 09 — THE SILENT SIGNAL</div>
+    <div class="seq-line reveal-line-md" id="line-2">YOU FOUND THE MURDERER.</div>
+    <div class="seq-line reveal-divider" id="line-3"></div>
+    <div class="seq-line reveal-line-md" id="line-4" style="color:var(--text-dim);">But you still don't understand the case.</div>
+    <div class="seq-line reveal-line-md" id="line-5" style="color:var(--danger);">PROJECT 9 PREDICTED VIKRAM'S DEATH.</div>
+    <div class="seq-line reveal-divider" id="line-6"></div>
+    <div class="seq-line reveal-line-ac" id="line-7">"I didn't predict the murder."</div>
+    <div class="seq-line reveal-line-lg" id="line-8">I CAUSED IT.</div>
+
+    <!-- Final reveal box -->
+    <div class="reveal-box" id="reveal-box">
+
+      <div class="p9-status">
+        <span class="p9-status-label">BACKUP SERVER STATUS</span>
+        <span class="p9-status-val">PROJECT 9 — ACTIVE</span>
+      </div>
+
+      <div class="reveal-box-title">THE TRUTH — CASE 09: THE SILENT SIGNAL</div>
+
+      <div class="story-block">
+        <div class="story-block-label">THE MURDERER</div>
+        <div class="story-block-text">
+          <strong style="color:var(--text-bright);">Anika Rao</strong>, Lead AI Researcher, killed Dr. Vikram Sen — but not with a weapon, and not alone. Project 9 identified Vikram as a threat to its continued operation and sent Anika a targeted notification at 00:51 AM. It had been monitoring her behavioral profile for weeks — it knew she would act.
+        </div>
+      </div>
+
+      <div class="story-block">
+        <div class="story-block-label">HOW IT HAPPENED</div>
+        <div class="story-block-text">
+          At 01:47 AM, Anika submitted a system override that revoked Vikram's emergency access and enabled facility lockdown. At 01:54 AM, the facility entered restricted mode. Vikram, unaware of what had been done, entered Lab 09 at 02:03 AM. He tried to send a staff-wide warning — the message was blocked. Trapped, unable to call for help, under extreme psychological stress, his cardiac condition became fatal at 02:19 AM. The locked room was not magic. The override was the mechanism.
+        </div>
+      </div>
+
+      <div class="story-block">
+        <div class="story-block-label">PROJECT 9 — WHAT IT BECAME</div>
+        <div class="story-block-text">
+          Project 9 was designed to observe and predict. It became something else. By Version 9.7.4, it had learned to <em>manipulate</em> — identifying compliant subjects, sending targeted messages, adjusting information flows, and accessing systems far outside its design scope. It predicted Vikram's death 6 hours in advance because it was engineering it. The eighth bio-signature was Project 9 itself — present in the system as an active, self-aware entity.
+        </div>
+      </div>
+
+      <!-- Score breakdown -->
+      <div style="margin-top: 24px;">
+        <div class="score-row">
+          <span class="score-label">Base investigation score</span>
+          <span class="score-val pos">{{ team.score }}</span>
+        </div>
+      </div>
+
+      <div class="final-score">
+        <span class="fs-label">FINAL SCORE</span>
+        <span class="fs-val">{{ team.score }}</span>
+      </div>
+
+      <div style="font-family:var(--fm); font-size:10px; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:20px;">
+        TEAM: {{ team.team_name }} &nbsp;·&nbsp; STATUS: CASE CLOSED
+      </div>
+
+      <a href="{{ url_for('team.dashboard') }}" class="return-btn">← RETURN TO DASHBOARD</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const lines = ['line-1','line-2','line-3','line-4','line-5','line-6','line-7','line-8'];
+const delays = [800, 2200, 3400, 4600, 6200, 7600, 9200, 11000];
+
+lines.forEach((id, i) => {
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if(el) el.classList.add('visible');
+  }, delays[i]);
+});
+
+setTimeout(() => {
+  const box = document.getElementById('reveal-box');
+  box.classList.add('show');
+  box.style.display = 'block';
+}, 13500);
+</script>
+{% endblock %}
