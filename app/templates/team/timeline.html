@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.tl-wrap {
+  min-height: 100vh; display: flex; flex-direction: column;
+  background: var(--bg); padding: 20px 24px;
+}
+.header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 30px;
+}
+.tl-container {
+  max-width: 800px; margin: 0 auto; width: 100%; position: relative;
+  padding-left: 30px;
+}
+.tl-line {
+  position: absolute; left: 6px; top: 0; bottom: 0; width: 2px;
+  background: var(--border);
+}
+.tl-event {
+  position: relative; margin-bottom: 30px;
+  background: rgba(11,16,28,0.8); border: 1px solid var(--border);
+  padding: 16px; border-radius: 4px;
+}
+.tl-event.locked {
+  opacity: 0.3; border-style: dashed; filter: grayscale(1);
+}
+.tl-dot {
+  position: absolute; left: -30px; top: 20px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--text-dim);
+  z-index: 2;
+}
+.tl-event.active .tl-dot {
+  border-color: var(--accent); background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+.tl-event.anomaly .tl-dot {
+  border-color: var(--danger); background: var(--danger);
+  box-shadow: 0 0 10px var(--danger);
+}
+.tl-event.anomaly {
+  border-color: rgba(192,57,43,0.3); background: rgba(192,57,43,0.04);
+}
+.tl-time {
+  font-family: var(--fm); font-size: 14px; font-weight: bold;
+  letter-spacing: 0.1em; color: var(--text-bright);
+  margin-bottom: 4px;
+}
+.tl-event.anomaly .tl-time { color: var(--danger); }
+.tl-title {
+  font-family: var(--fd); font-size: 16px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--text-bright); margin-bottom: 8px;
+}
+.tl-desc {
+  font-family: var(--fb); font-size: 15px; color: var(--text-dim);
+  line-height: 1.6;
+}
+.tl-ev-link {
+  display: inline-block; margin-top: 10px;
+  font-family: var(--fm); font-size: 14px; padding: 4px 8px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-bright); text-decoration: none;
+}
+.tl-ev-link:hover { background: rgba(255,255,255,0.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else [] %}
+{% set solved = team.solved_puzzles.split(',') if team.solved_puzzles else [] %}
+
+<div class="tl-wrap">
+  <header class="header-bar">
+    <div>
+      <div style="font-family:var(--fm); font-size: 16px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:4px;">
+        CASE 09 // CHRONOLOGY
+      </div>
+      <div style="font-family:var(--fd); font-size: 26px; font-weight:700; letter-spacing:0.16em; color:var(--text-bright);">
+        EVENT TIMELINE
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <a href="{{ url_for('team.dashboard') }}" class="btn btn-ghost" style="font-size: 14px;">← HQ DASHBOARD</a>
+    </div>
+  </header>
+
+  <div class="tl-container">
+    <div class="tl-line"></div>
+
+    <!-- Event 1 -->
+    <div class="tl-event active">
+      <div class="tl-dot"></div>
+      <div class="tl-time">22:00 (PREVIOUS DAY)</div>
+      <div class="tl-title">Routine Operations Continue</div>
+      <div class="tl-desc">Facility operates normally. Meera Thomas begins compiling weekly data reports in the lab.</div>
+    </div>
+
+    <!-- Event 2 -->
+    <div class="tl-event {% if 'security_logs' in unlocked %}active{% else %}locked{% endif %}">
+      <div class="tl-dot"></div>
+      <div class="tl-time">00:17 - 01:14 AM</div>
+      <div class="tl-title">Suspicious Network Activity</div>
+      <div class="tl-desc">
+        {% if 'security_logs' in unlocked %}
+        Network Admin Logs show multiple logins from Rohan Kapoor's credentials.
+        {% else %}
+        [RECORD LOCKED - REQUIRES NETWORK ADMIN LOGS]
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Event 3 -->
+    <div class="tl-event {% if 'p9_activity' in unlocked %}anomaly{% else %}locked{% endif %}">
+      <div class="tl-dot"></div>
+      <div class="tl-time">01:42 AM</div>
+      <div class="tl-title">Project 9 Behavior Override</div>
+      <div class="tl-desc">
+        {% if 'p9_activity' in unlocked %}
+        Anika Rao's credentials used to access BEHAVIOR_OVERRIDE_v2 on Project 9. P9 begins querying door overrides.
+        {% else %}
+        [RECORD LOCKED - REQUIRES P9 SESSION LOGS]
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Event 4 -->
+    <div class="tl-event {% if 'anika_override' in unlocked %}active{% else %}locked{% endif %}">
+      <div class="tl-dot"></div>
+      <div class="tl-time">01:47 AM</div>
+      <div class="tl-title">Override Request Submitted</div>
+      <div class="tl-desc">
+        {% if 'anika_override' in unlocked %}
+        An override is officially submitted targeting Vikram Sen's access codes.
+        {% else %}
+        [RECORD LOCKED - REQUIRES CRITICAL EVIDENCE]
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Event 5 -->
+    <div class="tl-event active">
+      <div class="tl-dot"></div>
+      <div class="tl-time">02:03 AM</div>
+      <div class="tl-title">Final Valid Entry</div>
+      <div class="tl-desc">Last confirmed door access log before systems begin desynchronizing.</div>
+    </div>
+    
+    <!-- Event 6 -->
+    <div class="tl-event {% if 'cctv_corrected' in unlocked %}anomaly{% else %}locked{% endif %}">
+      <div class="tl-dot"></div>
+      <div class="tl-time">02:13 AM</div>
+      <div class="tl-title">CCTV Feed Interruption</div>
+      <div class="tl-desc">
+        {% if 'cctv_corrected' in unlocked %}
+        The CCTV feed in Corridor B cuts out entirely for two minutes. Smartwatch data shows stress spike at 02:11 AM.
+        {% else %}
+        [RECORD LOCKED - REQUIRES CORRECTED TIMELINE]
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Event 7 -->
+    <div class="tl-event anomaly">
+      <div class="tl-dot"></div>
+      <div class="tl-time">02:19 AM</div>
+      <div class="tl-title">Time of Death</div>
+      <div class="tl-desc">
+        Dr. Vikram Sen suffers fatal cardiac arrest. Project 9 prediction archive later reveals a 94.7% confidence prediction for this exact minute.
+      </div>
+    </div>
+
+    <!-- Event 8 -->
+    <div class="tl-event active">
+      <div class="tl-dot"></div>
+      <div class="tl-time">02:30 AM</div>
+      <div class="tl-title">Discovery</div>
+      <div class="tl-desc">Tara Sen arrives at the facility and raises the alarm.</div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+

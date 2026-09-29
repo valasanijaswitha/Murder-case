@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.suspects-wrap {
+  min-height: 100vh; display: flex; flex-direction: column;
+  background: var(--bg); padding: 20px 24px;
+}
+.header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+}
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;
+  flex-grow: 1; align-content: start;
+}
+.s-card {
+  background: rgba(11,16,28,0.8);
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.s-head {
+  display: flex; gap: 16px; padding: 16px; border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.s-port {
+  width: 70px; height: 90px; flex-shrink: 0;
+  background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.s-port img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; filter: grayscale(1); }
+.s-info { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+.s-name { font-family: var(--fd); font-size: 24px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-bright); line-height: 1.2; }
+.s-role { font-family: var(--fm); font-size: 14px; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; }
+.s-rel { font-family: var(--fb); font-size: 14px; color: var(--text-dim); }
+
+.s-body { padding: 16px; flex-grow: 1; display: flex; flex-direction: column; gap: 12px; }
+.s-sec-lbl { font-family: var(--fd); font-size: 16px; letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+.s-sec-val { font-family: var(--fb); font-size: 11.5px; line-height: 1.6; color: var(--text); }
+.s-sec-val.alert { color: var(--danger); }
+.s-evidence { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.s-ev-tag { font-family: var(--fm); font-size: 16px; padding: 3px 6px; background: rgba(91,196,203,0.1); border: 1px solid rgba(91,196,203,0.3); color: var(--accent); }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="suspects-wrap">
+  <header class="header-bar">
+    <div>
+      <div style="font-family:var(--fm); font-size: 16px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:4px;">
+        CASE 09 // PROFILES
+      </div>
+      <div style="font-family:var(--fd); font-size: 26px; font-weight:700; letter-spacing:0.16em; color:var(--text-bright);">
+        SUSPECT BOARD
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <a href="{{ url_for('team.dashboard') }}" class="btn btn-ghost" style="font-size: 14px;">← HQ DASHBOARD</a>
+    </div>
+  </header>
+
+  <div class="grid">
+    {% set suspects = [
+      {
+        'id': 'anika', 'name': 'Anika Rao', 'role': 'AI Lead',
+        'rel': 'Directly involved in Project 9.',
+        'statement': 'Left the facility before midnight. Was working on the prediction algorithms at home.',
+        'timeline': 'Checked out at 23:45. No other recorded access.',
+        'alibi': 'At home, supposedly.',
+        'suspicious': 'Her workstation was accessed remotely. Project 9 queried door overrides and sent messages to her account at 01:42 AM.',
+        'evidence': ['P9 Session Activity', 'Anika Override Request']
+      },
+      {
+        'id': 'rohan', 'name': 'Rohan Kapoor', 'role': 'Security Officer',
+        'rel': 'Responsible for facility security.',
+        'statement': 'No activity in Sector B after 11 PM. The logs were clear when he checked.',
+        'timeline': 'On duty during the incident. Patrolled Sector A at 01:30 AM.',
+        'alibi': 'In the main security hub.',
+        'suspicious': 'Network Admin Logs show his credentials were used to access the system four times between 00:17 and 01:14 AM.',
+        'evidence': ['Network Admin Logs', "Rohan's Hidden Discovery"]
+      },
+      {
+        'id': 'meera', 'name': 'Meera Thomas', 'role': 'Data Scientist',
+        'rel': 'Works with research data and predictive models.',
+        'statement': 'Was compiling the weekly data reports. Vikram seemed stressed earlier that day.',
+        'timeline': 'In the data lab from 22:00 to 03:00 AM.',
+        'alibi': 'Working late in the data lab.',
+        'suspicious': 'Has detailed knowledge of Project 9\'s predictive records and anomalies.',
+        'evidence': []
+      },
+      {
+        'id': 'arjun', 'name': 'Arjun Malhotra', 'role': 'Operations Manager',
+        'rel': 'Oversees facility operations.',
+        'statement': 'Vikram was planning a major operational shift. They had a disagreement about facility access protocols.',
+        'timeline': 'Left at 20:00. Received an alert at 02:25 AM.',
+        'alibi': 'Off-site.',
+        'suspicious': 'Knows the blind spots in the facility\'s surveillance and the override codes.',
+        'evidence': []
+      },
+      {
+        'id': 'kabir', 'name': 'Kabir Shah', 'role': 'Hardware Engineer',
+        'rel': 'Maintains technical infrastructure.',
+        'statement': 'The server load was unusually high around 1 AM, but he thought it was a routine backup.',
+        'timeline': 'In the server room from 00:30 to 02:45 AM.',
+        'alibi': 'Server room maintenance.',
+        'suspicious': 'Had physical access to the network switches that route the CCTV feeds.',
+        'evidence': []
+      },
+      {
+        'id': 'tara', 'name': 'Tara Sen', 'role': 'Research Assistant',
+        'rel': 'Vikram Sen\'s sister.',
+        'statement': 'Vikram was afraid. He told her he was going to shut something down.',
+        'timeline': 'Arrived at 02:30 AM after Vikram stopped responding to messages.',
+        'alibi': 'En route to the facility during the incident.',
+        'suspicious': 'She knew about Vikram\'s plan to shut down Project 9 and had his secondary access codes.',
+        'evidence': []
+      }
+    ] %}
+
+    {% for s in suspects %}
+    <div class="s-card">
+      <div class="s-head">
+        <div class="s-port">
+          <!-- Placeholder portrait -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width:32px; height:32px; color:var(--text-dim);">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m8-10a4 4 0 100-8 4 4 0 000 8z" />
+          </svg>
+        </div>
+        <div class="s-info">
+          <div class="s-name">{{ s.name }}</div>
+          <div class="s-role">{{ s.role }}</div>
+          <div class="s-rel">{{ s.rel }}</div>
+        </div>
+      </div>
+      <div class="s-body">
+        <div>
+          <div class="s-sec-lbl">Statement</div>
+          <div class="s-sec-val">"{{ s.statement }}"</div>
+        </div>
+        <div>
+          <div class="s-sec-lbl">Known Timeline</div>
+          <div class="s-sec-val">{{ s.timeline }}</div>
+        </div>
+        <div>
+          <div class="s-sec-lbl">Alibi</div>
+          <div class="s-sec-val">{{ s.alibi }}</div>
+        </div>
+        {% if team.current_round >= 2 %}
+        <div>
+          <div class="s-sec-lbl" style="color:var(--danger);">Suspicious Details</div>
+          <div class="s-sec-val alert">{{ s.suspicious }}</div>
+        </div>
+        {% endif %}
+        
+        {% if s.evidence and team.current_round >= 2 %}
+        <div style="margin-top:auto; padding-top:12px; border-top:1px solid var(--border);">
+          <div class="s-sec-lbl">Associated Evidence</div>
+          <div class="s-evidence">
+            {% for ev in s.evidence %}
+            <div class="s-ev-tag">{{ ev }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}
+

@@ -1,0 +1,115 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+
+.acc-card {
+    background: rgba(11, 16, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px; padding: 24px; margin-bottom: 20px;
+}
+.acc-header {
+    display: flex; justify-content: space-between; border-bottom: 1px solid var(--border);
+    padding-bottom: 16px; margin-bottom: 16px;
+}
+.acc-team { font-family: var(--fd); font-size: 28px; font-weight: 700; color: var(--text-bright); }
+.acc-time { font-family: var(--fm); font-size: 14px; color: var(--text-dim); }
+.acc-status {
+    font-family: var(--fm); font-size: 14px; padding: 4px 8px; border: 1px solid;
+    border-radius: 2px;
+}
+.acc-status.pending { color: var(--warn); border-color: rgba(184,134,11,0.4); }
+.acc-status.reviewed { color: var(--success); border-color: rgba(39,174,96,0.4); }
+
+.acc-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+}
+.acc-field-title {
+    font-family: var(--fd); font-size: 14px; letter-spacing: 0.15em;
+    color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px;
+}
+.acc-field-value {
+    font-family: var(--fb); font-size: 14px; color: var(--text-bright);
+    background: rgba(0,0,0,0.3); padding: 12px; border: 1px solid var(--border);
+    border-radius: 2px; white-space: pre-wrap;
+}
+.acc-actions {
+    margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;
+}
+
+.action-btn {
+    padding: 10px 16px;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--text-dim);
+    background: transparent; border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+}
+.action-btn:hover { border-color: var(--border-ac); color: var(--accent); }
+.action-btn.primary { border-color: rgba(91,196,203,0.4); color: var(--accent); }
+.action-btn.primary:hover { background: var(--accent-dim); border-color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <h2 class="section-title decrypted-text" style="margin-bottom:0;" data-text="FINAL ACCUSATIONS">FINAL ACCUSATIONS</h2>
+    <div style="display:flex; gap: 12px;">
+        <button class="action-btn" style="border-color:var(--danger); color:var(--danger);" onclick="alert('Reveal triggered')">TRIGGER STORY REVEAL FOR ALL</button>
+    </div>
+</div>
+
+<div class="animated-list">
+    {% for acc in accusations %}
+    <div class="acc-card glass-surface animated-list-item">
+        <div class="acc-header">
+            <div>
+                <div class="acc-team">{{ teams.get(acc.team_id, 'Unknown Team') }}</div>
+                <div class="acc-time">Submitted: {{ acc.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+            </div>
+            <div class="acc-status {{ acc.status|lower }}">{{ acc.status }}</div>
+        </div>
+        
+        <div class="acc-grid">
+            <div>
+                <div class="acc-field-title">WHO (THE KILLER)</div>
+                <div class="acc-field-value">{{ acc.who }}</div>
+            </div>
+            <div>
+                <div class="acc-field-title">EVIDENCE</div>
+                <div class="acc-field-value">{{ acc.evidence }}</div>
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <div class="acc-field-title">HOW & WHY (MOTIVE)</div>
+                <div class="acc-field-value">{{ acc.how }}<br><br>{{ acc.why }}</div>
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <div class="acc-field-title">DEEPER TRUTH (PROJECT 9)</div>
+                <div class="acc-field-value">{{ acc.truth }}</div>
+            </div>
+        </div>
+        
+        <div class="acc-actions">
+            {% if acc.status == 'PENDING' %}
+            
+            {% else %}
+            <div style="font-family:var(--fd); font-size: 15px; color:var(--success); align-self:center; letter-spacing:0.1em;">
+                AWARDED: {{ acc.score_awarded }} PTS
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:60px; color:var(--text-dim); font-family:var(--fm); letter-spacing:0.1em;">
+        NO ACCUSATIONS SUBMITTED YET
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

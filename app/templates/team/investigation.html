@@ -27,13 +27,13 @@
   animation: flicker 7s infinite;
 }
 .hd-sub {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  font-family: var(--fm); font-size: 16px; letter-spacing: 0.2em;
   color: var(--text-dim);
 }
 .hd-rounds { display: flex; gap: 0; }
 .hd-tab {
   padding: 5px 14px; cursor: pointer;
-  font-family: var(--fd); font-size: 9px; font-weight: 600;
+  font-family: var(--fd); font-size: 16px; font-weight: 600;
   letter-spacing: 0.15em; text-transform: uppercase;
   border: 1px solid; transition: all 0.18s;
   display: flex; flex-direction: column; align-items: center; gap: 1px;
@@ -42,16 +42,16 @@
 .hd-tab.active  { border-color: var(--border-ac); color: var(--text-bright); background: var(--accent-dim); }
 .hd-tab.done    { border-color: rgba(39,174,96,0.3); color: rgba(39,174,96,0.75); background: rgba(39,174,96,0.04); }
 .hd-tab.locked  { border-color: rgba(255,255,255,0.04); color: var(--text-dim); opacity: 0.4; cursor: not-allowed; }
-.hd-tab-num { font-size: 8px; }
+.hd-tab-num { font-size: 15px; }
 .hd-meta { display: flex; align-items: center; gap: 16px; }
 .hd-stat { text-align: right; }
 .hd-stat-val { font-family: var(--fm); font-size: 14px; color: var(--text-bright); }
 .hd-stat-val.ac { color: var(--accent); }
-.hd-stat-lbl { font-family: var(--fd); font-size: 8px; letter-spacing: 0.2em; color: var(--text-dim); }
-.hd-timer { font-family: var(--fm); font-size: 18px; }
+.hd-stat-lbl { font-family: var(--fd); font-size: 15px; letter-spacing: 0.2em; color: var(--text-dim); }
+.hd-timer { font-family: var(--fm); font-size: 24px; }
 .hd-hq {
   display: flex; align-items: center; gap: 5px;
-  font-family: var(--fd); font-size: 9px; letter-spacing: 0.14em;
+  font-family: var(--fd); font-size: 16px; letter-spacing: 0.14em;
   color: var(--text-dim); text-decoration: none;
   border: 1px solid var(--border); padding: 5px 10px;
   transition: color 0.18s, border-color 0.18s;
@@ -94,7 +94,7 @@
 .hotspot-cross::after  { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -0.5px; }
 .hotspot-label {
   position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
-  white-space: nowrap; font-family: var(--fm); font-size: 8px;
+  white-space: nowrap; font-family: var(--fm); font-size: 15px;
   letter-spacing: 0.18em; color: var(--accent);
   background: rgba(7,9,15,0.92); border: 1px solid rgba(91,196,203,0.2);
   padding: 2px 8px; pointer-events: none;
@@ -120,33 +120,62 @@
 
 /* ── Ghost ── */
 .ghost-wrap {
-  position: absolute; bottom: 0; right: 22%;
-  height: 60%; width: auto;
-  pointer-events: none; z-index: 3;
+  position: absolute; top: 13%; left: 53%;
+  width: clamp(110px, 16%, 220px); height: 48%;
+  pointer-events: auto; z-index: 3;
+  cursor: pointer;
+  animation: apparitionFloat 8s ease-in-out infinite;
 }
 .ghost-img {
-  height: 100%; width: auto; object-fit: contain;
-  opacity: 0.45;
+  position: relative; z-index: 1;
+  width: 100%; height: 100%; object-fit: contain;
+  opacity: 0.48;
   mix-blend-mode: screen;
-  filter: saturate(0.3) brightness(1.4) hue-rotate(190deg);
-  animation: float 6s ease-in-out infinite, glitch 10s infinite;
+  filter: grayscale(0.75) sepia(0.12) hue-rotate(165deg) saturate(0.55)
+          brightness(1.05) blur(0.45px) contrast(0.9);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 84%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 84%, transparent 100%);
+  animation: apparitionOpacity 7s ease-in-out infinite;
 }
 .ghost-glow {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, rgba(91,196,203,0.08) 0%, transparent 70%);
-  animation: pulseSubtle 4s infinite;
+  position: absolute; inset: -18% -35%; z-index: 0;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(170,190,198,0.18) 0%, rgba(91,135,145,0.08) 34%, transparent 70%),
+    radial-gradient(ellipse at 50% 90%, rgba(170,190,198,0.12) 0%, transparent 62%);
+  filter: blur(14px);
+  animation: mistDrift 10s ease-in-out infinite;
+}
+.ghost-wrap::after {
+  content: '';
+  position: absolute; left: -18%; right: -18%; bottom: 2%; height: 24%;
+  background: radial-gradient(ellipse, rgba(185,205,208,0.15), transparent 68%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+@keyframes apparitionFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes apparitionOpacity {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 0.52; }
+}
+@keyframes mistDrift {
+  0%, 100% { transform: scale(0.96); opacity: 0.7; }
+  50% { transform: scale(1.04) translateY(-4px); opacity: 1; }
 }
 
 /* ── Scene HUD corners ── */
 .scene-hud {
   position: absolute; top: 10px; left: 10px; z-index: 5;
-  font-family: var(--fm); font-size: 9px;
+  font-family: var(--fm); font-size: 16px;
   line-height: 1.9; letter-spacing: 0.12em; color: rgba(91,196,203,0.45);
   pointer-events: none;
 }
 .scene-hud-br {
   position: absolute; bottom: 10px; right: 10px; z-index: 5;
-  text-align: right; font-family: var(--fm); font-size: 9px;
+  text-align: right; font-family: var(--fm); font-size: 16px;
   line-height: 1.9; letter-spacing: 0.1em; color: rgba(255,255,255,0.2);
   pointer-events: none;
 }
@@ -188,7 +217,7 @@
 }
 .dt-card:hover { border-color: var(--border-ac); background: rgba(91,196,203,0.04); }
 .dt-card-type {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  font-family: var(--fm); font-size: 16px; letter-spacing: 0.2em;
   color: var(--accent); margin-bottom: 10px; text-transform: uppercase;
 }
 .dt-card-name {
@@ -196,11 +225,11 @@
   letter-spacing: 0.1em; color: var(--text-bright); margin-bottom: 4px;
 }
 .dt-card-sub {
-  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+  font-family: var(--fm); font-size: 14px; color: var(--text-dim);
   margin-bottom: 10px;
 }
 .dt-card-note {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.08em;
+  font-family: var(--fm); font-size: 16px; letter-spacing: 0.08em;
   font-style: italic; color: var(--text-dim); opacity: 0.7;
   padding-top: 10px; border-top: 1px solid var(--border);
 }
@@ -222,7 +251,7 @@
   margin-bottom: 6px;
 }
 .p9-ver {
-  font-family: var(--fm); font-size: 10px; letter-spacing: 0.2em;
+  font-family: var(--fm); font-size: 14px; letter-spacing: 0.2em;
   color: var(--text-dim); margin-bottom: 40px;
 }
 .p9-cards {
@@ -235,13 +264,13 @@
   transition: border-color 0.2s, background 0.2s;
 }
 .p9-card:hover { border-color: var(--border-ac); background: rgba(91,196,203,0.04); }
-.p9-card-icon { font-size: 22px; margin-bottom: 12px; }
+.p9-card-icon { font-size: 28px; margin-bottom: 12px; }
 .p9-card-name {
-  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  font-family: var(--fd); font-size: 14px; font-weight: 600;
   letter-spacing: 0.14em; color: var(--text-bright); margin-bottom: 6px;
 }
 .p9-card-tag {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em;
+  font-family: var(--fm); font-size: 16px; letter-spacing: 0.12em;
 }
 
 /* ── Final Deduction (R4) ── */
@@ -259,7 +288,7 @@
   letter-spacing: 0.2em; color: var(--danger); margin-bottom: 8px;
 }
 .r4-sub {
-  font-family: var(--fb); font-size: 13px; color: var(--text-dim);
+  font-family: var(--fb); font-size: 16px; color: var(--text-dim);
   line-height: 1.6; margin-bottom: 32px;
 }
 
@@ -276,7 +305,7 @@
 .rp-head {
   padding: 10px 14px 8px;
   border-bottom: 1px solid var(--border);
-  font-family: var(--fd); font-size: 9px; font-weight: 600;
+  font-family: var(--fd); font-size: 16px; font-weight: 600;
   letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim);
   display: flex; justify-content: space-between; align-items: center;
 }
@@ -290,11 +319,11 @@
   margin-bottom: 6px;
 }
 .vc-name { font-family: var(--fd); font-size: 14px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-bright); }
-.vc-status { font-family: var(--fm); font-size: 9px; letter-spacing: 0.18em; color: var(--danger); margin-top: 2px; }
+.vc-status { font-family: var(--fm); font-size: 16px; letter-spacing: 0.18em; color: var(--danger); margin-top: 2px; }
 
 /* Objective */
 .obj-text {
-  font-family: var(--fb); font-size: 11px; color: var(--text-dim);
+  font-family: var(--fb); font-size: 14px; color: var(--text-dim);
   line-height: 1.6; padding: 10px 14px;
 }
 
@@ -303,16 +332,16 @@
   display: flex; align-items: center; gap: 8px;
   padding: 7px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
   cursor: pointer; transition: background 0.15s;
-  font-family: var(--fb); font-size: 11px;
+  font-family: var(--fb); font-size: 14px;
 }
 .puzzle-item:last-child { border-bottom: none; }
 .puzzle-item:hover { background: rgba(255,255,255,0.02); }
 .puzzle-item.solved { color: var(--success); }
 .puzzle-item.active { color: var(--text); }
 .puzzle-item.locked { color: var(--text-dim); opacity: 0.45; cursor: not-allowed; }
-.pi-icon { font-size: 11px; flex-shrink: 0; width: 14px; text-align: center; }
+.pi-icon { font-size: 14px; flex-shrink: 0; width: 14px; text-align: center; }
 .pi-badge {
-  margin-left: auto; font-family: var(--fm); font-size: 8px;
+  margin-left: auto; font-family: var(--fm); font-size: 15px;
   letter-spacing: 0.12em;
 }
 
@@ -321,7 +350,7 @@
   display: flex; align-items: center; gap: 8px;
   padding: 6px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
   cursor: pointer; transition: background 0.15s;
-  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
+  font-family: var(--fm); font-size: 14px; color: var(--text-dim);
 }
 .ev-item:last-child { border-bottom: none; }
 .ev-item:hover { background: rgba(255,255,255,0.02); color: var(--text); }
@@ -343,19 +372,19 @@
 .gp-pip.filled { background: var(--accent); border-color: var(--accent); }
 .gp-pip.empty  { border-color: rgba(255,255,255,0.15); }
 .ghost-select {
-  width: 100%; padding: 7px 10px; font-size: 10px; margin-bottom: 6px;
+  width: 100%; padding: 7px 10px; font-size: 14px; margin-bottom: 6px;
   background: rgba(0,0,0,0.5) !important;
   border: 1px solid var(--border) !important;
 }
 .ghost-idx-input {
-  width: 100%; padding: 7px 10px; font-size: 10px; margin-bottom: 8px;
+  width: 100%; padding: 7px 10px; font-size: 14px; margin-bottom: 8px;
 }
 .ghost-btn {
   width: 100%; padding: 9px;
   background: rgba(91,196,203,0.06);
   border: 1px solid rgba(91,196,203,0.25);
   color: var(--accent);
-  font-family: var(--fd); font-size: 10px; letter-spacing: 0.18em;
+  font-family: var(--fd); font-size: 14px; letter-spacing: 0.18em;
   cursor: pointer; transition: all 0.18s;
 }
 .ghost-btn:hover { background: rgba(91,196,203,0.14); }
@@ -363,7 +392,7 @@
   margin-top: 10px; padding: 10px;
   background: rgba(91,196,203,0.04);
   border: 1px solid rgba(91,196,203,0.15);
-  font-family: var(--fm); font-size: 10px;
+  font-family: var(--fm); font-size: 14px;
   color: var(--accent); line-height: 1.6;
   font-style: italic; display: none;
 }
@@ -391,7 +420,7 @@
   background: rgba(255,255,255,0.02);
 }
 .modal-title {
-  font-family: var(--fd); font-size: 13px; font-weight: 700;
+  font-family: var(--fd); font-size: 16px; font-weight: 700;
   letter-spacing: 0.18em; color: var(--text-bright);
 }
 .modal-close {
@@ -403,7 +432,7 @@
 .modal-close:hover { border-color: var(--danger); color: var(--danger); }
 .modal-body {
   flex-grow: 1; overflow-y: auto; padding: 24px;
-  font-family: var(--fm); font-size: 12px; color: var(--text);
+  font-family: var(--fm); font-size: 15px; color: var(--text);
 }
 
 /* ── Evidence notification ── */
@@ -412,7 +441,7 @@
   padding: 12px 18px;
   background: rgba(9,22,13,0.97);
   border: 1px solid rgba(39,174,96,0.4);
-  font-family: var(--fd); font-size: 10px;
+  font-family: var(--fd); font-size: 14px;
   letter-spacing: 0.2em; color: var(--success);
   animation: evidenceIn 0.3s ease; display: none;
 }
@@ -435,7 +464,7 @@
 .ev-header-bar {
   background: rgba(0,0,0,0.5); padding: 10px 14px; margin-bottom: 16px;
   border-bottom: 1px solid var(--border);
-  font-size: 9px; letter-spacing: 0.2em; color: var(--text-dim);
+  font-size: 16px; letter-spacing: 0.2em; color: var(--text-dim);
   display: flex; justify-content: space-between;
 }
 .ev-field { display: flex; margin-bottom: 8px; }
@@ -446,7 +475,7 @@
 .ev-field-val.ok  { color: var(--success); }
 .ev-note {
   padding: 12px 14px; margin-top: 14px;
-  font-size: 11px; line-height: 1.7;
+  font-size: 14px; line-height: 1.7;
   border: 1px solid;
 }
 .ev-note.warn  { border-color: rgba(184,134,11,0.3); color: rgba(184,134,11,0.9); background: rgba(184,134,11,0.06); }
@@ -456,7 +485,7 @@
 /* Terminal viewer */
 .terminal {
   background: #030507; padding: 16px;
-  font-family: var(--fm); font-size: 11px;
+  font-family: var(--fm); font-size: 14px;
   line-height: 1.9; color: #7ec8a0;
   border: 1px solid rgba(255,255,255,0.04);
 }
@@ -473,7 +502,7 @@
 .log-cell { padding: 7px 8px; vertical-align: top; }
 .log-time { color: var(--text-dim); white-space: nowrap; width: 90px; }
 .log-event { color: var(--text); }
-.log-detail { color: var(--text-dim); font-size: 10px; }
+.log-detail { color: var(--text-dim); font-size: 14px; }
 
 /* CCTV viewer */
 .cctv-frame {
@@ -491,7 +520,7 @@
 .cctv-meta {
   position: absolute; top: 8px; left: 8px; right: 8px;
   display: flex; justify-content: space-between;
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.12em;
+  font-family: var(--fm); font-size: 16px; letter-spacing: 0.12em;
   color: rgba(255,255,255,0.5);
 }
 .cctv-interrupt {
@@ -510,15 +539,15 @@
   padding: 14px; margin-top: 4px;
 }
 .gd-label {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.2em;
+  font-family: var(--fm); font-size: 16px; letter-spacing: 0.2em;
   color: var(--accent); margin-bottom: 8px;
 }
 .gd-text {
-  font-family: var(--fm); font-size: 11px; color: var(--text);
+  font-family: var(--fm); font-size: 14px; color: var(--text);
   line-height: 1.7; font-style: italic;
 }
 .gd-sig {
-  font-family: var(--fm); font-size: 9px; color: var(--text-dim);
+  font-family: var(--fm); font-size: 16px; color: var(--text-dim);
   margin-top: 8px; text-align: right;
 }
 
@@ -541,7 +570,7 @@
   color: var(--text-bright); font-weight: 500; line-height: 1;
 }
 .morse-note-text {
-  font-family: var(--fm); font-size: 11px; color: var(--text-dim);
+  font-family: var(--fm); font-size: 14px; color: var(--text-dim);
   font-style: italic; line-height: 1.7; margin-bottom: 6px;
 }
 
@@ -553,11 +582,11 @@
   background: rgba(0,0,0,0.3);
 }
 .tl-label {
-  font-family: var(--fd); font-size: 9px; letter-spacing: 0.2em;
+  font-family: var(--fd); font-size: 16px; letter-spacing: 0.2em;
   margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
 }
 .tl-entry {
-  font-family: var(--fm); font-size: 11px; margin-bottom: 6px;
+  font-family: var(--fm); font-size: 14px; margin-bottom: 6px;
   display: flex; justify-content: space-between;
 }
 .tl-key { color: var(--text-dim); }
@@ -566,7 +595,7 @@
 .option-row {
   display: block; padding: 11px 14px; margin-bottom: 6px; cursor: pointer;
   border: 1px solid var(--border); transition: all 0.15s;
-  font-family: var(--fb); font-size: 12px;
+  font-family: var(--fb); font-size: 15px;
   display: flex; align-items: center; gap: 10px;
 }
 .option-row:hover { border-color: var(--border-ac); background: var(--accent-dim); }
@@ -579,17 +608,17 @@
 .bio-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-family: var(--fm); font-size: 12px;
+  font-family: var(--fm); font-size: 15px;
 }
 .bio-row:last-child { border-bottom: none; }
 .bio-key { color: var(--text-dim); }
-.bio-val { font-size: 20px; font-weight: 500; }
+.bio-val { font-size: 26px; font-weight: 500; }
 
 .submit-wrap { display: flex; gap: 8px; margin-top: 16px; }
 .puzzle-submit-btn {
   flex-grow: 1; padding: 12px;
   background: var(--accent-dim); border: 1px solid rgba(91,196,203,0.4);
-  color: var(--accent); font-family: var(--fd); font-size: 11px;
+  color: var(--accent); font-family: var(--fd); font-size: 14px;
   letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
   transition: all 0.18s;
 }
@@ -597,14 +626,14 @@
 .puzzle-hint-btn {
   padding: 12px 16px;
   background: var(--danger-dim); border: 1px solid rgba(192,57,43,0.35);
-  color: var(--danger); font-family: var(--fd); font-size: 10px;
+  color: var(--danger); font-family: var(--fd); font-size: 14px;
   letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
   transition: all 0.18s;
 }
 .puzzle-hint-btn:hover { background: var(--danger); color: #fff; }
 .puzzle-result {
   margin-top: 12px; padding: 12px 14px;
-  font-family: var(--fm); font-size: 11px; text-align: center;
+  font-family: var(--fm); font-size: 14px; text-align: center;
   border: 1px solid; display: none; line-height: 1.6;
 }
 .puzzle-result.ok  { border-color: rgba(39,174,96,0.4); color: var(--success); background: rgba(39,174,96,0.06); }
@@ -628,7 +657,7 @@
 <!-- Round transition overlay -->
 <div id="round-transition" class="round-transition">
   <div class="rt-overlay-text" id="rt-text">ROUND COMPLETE</div>
-  <div style="font-family:var(--fm); font-size:11px; letter-spacing:0.2em; color:var(--text-dim);">Loading next phase...</div>
+  <div style="font-family:var(--fm); font-size: 14px; letter-spacing:0.2em; color:var(--text-dim);">Loading next phase...</div>
 </div>
 
 <div class="inv-wrap">
@@ -651,6 +680,7 @@
     </div>
 
     <div class="hd-meta">
+      <a href="{{ url_for('team.story') }}" class="hd-hq" style="border-color:var(--border-ac); color:var(--accent); margin-right:10px;">READ CASE STORY</a>
       <div class="hd-stat">
         <div class="hd-stat-val ac" id="ghost-count">{{ team.ghost_points }}</div>
         <div class="hd-stat-lbl">GHOST PTS</div>
@@ -708,10 +738,12 @@
         </div>
 
         <!-- Ghost -->
-        <div class="ghost-wrap">
+             <div class="ghost-wrap" role="button" tabindex="0" aria-label="Talk to the ghost"
+               onclick="focusGhostSystem()"
+               onkeydown="if(event.key === 'Enter' || event.key === ' ') focusGhostSystem()">
           <div class="ghost-glow"></div>
-          <img src="{{ url_for('static', filename='assets/ghost.jpg') }}"
-               class="ghost-img" alt="">
+          <img src="{{ url_for('static', filename='assets/ghost_apparition.svg') }}"
+            class="ghost-img" alt="A faint apparition of Dr. Vikram Sen">
         </div>
 
         <!-- ─ Hotspots ─ -->
@@ -747,10 +779,10 @@
           <div class="hotspot-cross"></div>
           <div class="hotspot-label">WORKSTATION</div>
         </div>
-        <!-- NOTE → MORSE PUZZLE -->
-        <div class="hotspot {% if 'morse' in solved %}solved{% endif %}"
+        <!-- NOTE → OVERRIDE CODE PUZZLE -->
+        <div class="hotspot {% if 'override_code' in solved %}solved{% endif %}"
              style="top:34%;left:58%"
-             onclick="openPuzzle('morse')">
+             onclick="openPuzzle('override_code')">
           <div class="hotspot-ring"></div>
           <div class="hotspot-cross"></div>
           <div class="hotspot-label">HANDWRITTEN NOTE</div>
@@ -778,7 +810,7 @@
             <div class="dt-card" onclick="openEvidence('rohan_statement')">
               <div class="dt-card-type">▹ SUSPECT STATEMENT</div>
               <div class="dt-card-name">ROHAN KAPOOR</div>
-              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">
                 Cybersecurity Specialist // Recorded 09:15 AM
               </div>
               <div class="dt-card-note">
@@ -789,7 +821,7 @@
             <div class="dt-card" onclick="openEvidence('security_logs')">
               <div class="dt-card-type" style="color:var(--danger);">▹ NETWORK ADMIN LOG</div>
               <div class="dt-card-name">ADMIN SESSION RECORDS</div>
-              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">
                 Nov 09 // 00:17 AM — 01:14 AM
               </div>
               <div class="dt-card-note" style="color:var(--danger); opacity:0.7;">
@@ -800,7 +832,7 @@
             <div class="dt-card" onclick="openEvidence('anika_statement')">
               <div class="dt-card-type">▹ SUSPECT STATEMENT</div>
               <div class="dt-card-name">ANIKA RAO</div>
-              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">
                 Lead AI Researcher // Recorded 09:30 AM
               </div>
               <div class="dt-card-note">
@@ -811,7 +843,7 @@
             <div class="dt-card" onclick="openEvidence('p9_activity')">
               <div class="dt-card-type" style="color:var(--danger);">▹ PROJECT 9 SESSION LOG</div>
               <div class="dt-card-name">SYSTEM ACTIVITY RECORD</div>
-              <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+              <div class="dt-card-sub" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">
                 01:42 AM // USER: ANIKA.RAO
               </div>
               <div class="dt-card-note" style="color:var(--danger); opacity:0.7;">
@@ -871,14 +903,14 @@
                    style="border-color:rgba(192,57,43,0.25); background:rgba(192,57,43,0.05); text-align:left;">
                 <div class="dt-card-type" style="color:var(--danger);">▹ CRITICAL EVIDENCE</div>
                 <div class="dt-card-name">SYSTEM OVERRIDE LOG</div>
-                <div class="dt-card-sub" style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+                <div class="dt-card-sub" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">
                   01:47 AM — 02:19 AM // Reconstructed timeline
                 </div>
               </div>
             </div>
             <a href="{{ url_for('team.final_accusation') }}"
                class="btn btn-danger"
-               style="display:block; padding:16px; font-size:12px; letter-spacing:0.2em;">
+               style="display:block; padding:16px; font-size: 15px; letter-spacing:0.2em;">
               SUBMIT FINAL ACCUSATION →
             </a>
           </div>
@@ -917,11 +949,11 @@
       <div class="rp-block">
         <div class="rp-head">PUZZLES</div>
         {% if team.current_round >= 1 %}
-        <div class="puzzle-item {% if 'morse' in solved %}solved{% else %}active{% endif %}"
-             onclick="openPuzzle('morse')">
-          <span class="pi-icon">{% if 'morse' in solved %}✓{% else %}○{% endif %}</span>
-          <span>Morse Decode</span>
-          {% if 'morse' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
+        <div class="puzzle-item {% if 'override_code' in solved %}solved{% else %}active{% endif %}"
+             onclick="openPuzzle('override_code')">
+          <span class="pi-icon">{% if 'override_code' in solved %}✓{% else %}○{% endif %}</span>
+          <span>Override Code</span>
+          {% if 'override_code' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
         </div>
         <div class="puzzle-item {% if 'timeline' in solved %}solved{% else %}active{% endif %}"
              onclick="openPuzzle('timeline')">
@@ -952,7 +984,7 @@
           {% if 'p9_motive' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
         </div>
         {% endif %}
-        {% if team.current_round >= 2 and ('morse' not in solved or 'timeline' not in solved) == false and team.current_round < 3 %}{% endif %}
+        {% if team.current_round >= 2 and ('override_code' not in solved or 'timeline' not in solved) == false and team.current_round < 3 %}{% endif %}
         {% if team.current_round < 2 %}
         <div class="puzzle-item locked">
           <span class="pi-icon">■</span>
@@ -973,7 +1005,7 @@
       <div class="rp-block" style="flex-grow:1;">
         <div class="rp-head">
           <span>DISCOVERED EVIDENCE</span>
-          <span style="font-size:10px; color:var(--accent);">{{ unlocked|length }}</span>
+          <span style="font-size: 14px; color:var(--accent);">{{ unlocked|length }}</span>
         </div>
         {% set ev_labels = {
           'body':['FORENSIC','Victim — Vikram Sen'],
@@ -1011,12 +1043,12 @@
             {% for i in range(5) %}
             <div class="gp-pip {% if i < team.ghost_points %}filled{% else %}empty{% endif %}" id="gp-pip-{{ i }}"></div>
             {% endfor %}
-            <span style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-left:6px;">
+            <span style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); margin-left:6px;">
               <span id="ghost-count2">{{ team.ghost_points }}</span>/5
             </span>
           </div>
           <select id="hint-puzzle" class="ghost-select">
-            <option value="morse">Morse Puzzle</option>
+            <option value="override_code">Override Code Puzzle</option>
             <option value="timeline">Timeline Puzzle</option>
             <option value="rohan_lie">Rohan Contradiction</option>
             <option value="anika_lie">Anika Contradiction</option>
@@ -1062,6 +1094,14 @@ function showRound(r) {
 showRound(teamRound);
 function switchRound(r) { if(r<=teamRound) showRound(r); }
 
+function focusGhostSystem() {
+  const panel = document.querySelector('.ghost-system');
+  if(panel) {
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+    document.getElementById('hint-puzzle').focus();
+  }
+}
+
 /* ─ Modal ─ */
 function openModal(title, html) {
   document.getElementById('modal-title').textContent = title;
@@ -1077,7 +1117,7 @@ function openLocked() {
   openModal('ACCESS RESTRICTED', `
     <div style="text-align:center; padding:32px 20px;">
       <div style="font-family:var(--fd); font-size:28px; letter-spacing:0.2em; color:var(--danger); margin-bottom:12px;">ACCESS RESTRICTED</div>
-      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7;">
+      <div style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7;">
         This evidence has not been unlocked yet.<br>
         Complete the required investigation step first.
       </div>
@@ -1118,10 +1158,10 @@ const EVIDENCE = {
         <div class="cctv-interrupt">
           <div style="font-size:40px; opacity:0.2;">▣</div>
           <div class="cctv-interrupt-text">FEED INTERRUPTED</div>
-          <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim); letter-spacing:0.12em;">02:13 AM — 02:15 AM</div>
+          <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); letter-spacing:0.12em;">02:13 AM — 02:15 AM</div>
         </div>
       </div>
-      <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">SYSTEM LOG</div>
+      <div style="font-family:var(--fd); font-size: 16px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">SYSTEM LOG</div>
       <div class="ev-field"><span class="ev-field-key">Camera ID</span><span class="ev-field-val">CAM-09-B</span></div>
       <div class="ev-field"><span class="ev-field-key">Server Clock Offset</span><span class="ev-field-val red">+19 seconds (ahead of real time)</span></div>
       <div class="ev-field"><span class="ev-field-key">Offline Period</span><span class="ev-field-val red">02:13:19 — 02:15:02 (per CCTV clock)</span></div>
@@ -1144,17 +1184,17 @@ const EVIDENCE = {
       </div>
       <div class="morse-display">
         <div class="morse-paper-corner"></div>
-        <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:16px; text-transform:uppercase;">
-          Coded sequence written below the text:
+        <div style="font-family:var(--fm); font-size: 16px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:16px; text-transform:uppercase;">
+          Jumbled Override Password:
         </div>
-        <div class="morse-code-text">-.. --- --- .-.</div>
+        <div class="morse-code-text">O M I T E V</div>
       </div>
-      <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-bottom:14px;">
-        Decode the Morse sequence manually. Submit the word it spells.
+      <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); margin-bottom:14px;">
+        Unscramble the letters to find the override password.
       </div>
-      <button onclick="closeModal(); openPuzzle('morse')"
+      <button onclick="closeModal(); openPuzzle('override_code')"
               class="btn btn-primary" style="width:100%; padding:12px;">
-        ATTEMPT DECODE →
+        ENTER OVERRIDE →
       </button>
     `
   },
@@ -1234,10 +1274,10 @@ const EVIDENCE = {
         <span>RECORDED 09:15 AM</span>
       </div>
       <div style="padding:16px; background:rgba(0,0,0,0.3); border:1px solid var(--border); margin-bottom:16px; border-left:2px solid rgba(91,196,203,0.3);">
-        <div style="font-family:var(--fb); font-size:13px; line-height:1.8; color:var(--text); font-style:italic;">
+        <div style="font-family:var(--fb); font-size: 16px; line-height:1.8; color:var(--text); font-style:italic;">
           "I was monitoring network activity from the security center. No security-related activity occurred after 11 PM. The facility was quiet. I have no knowledge of any access to the Project 9 lab that night."
         </div>
-        <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:12px; text-align:right;">
+        <div style="font-family:var(--fm); font-size: 16px; color:var(--text-dim); margin-top:12px; text-align:right;">
           — Rohan Kapoor, Cybersecurity Specialist
         </div>
       </div>
@@ -1293,10 +1333,10 @@ const EVIDENCE = {
         <span>RECORDED 09:30 AM</span>
       </div>
       <div style="padding:16px; background:rgba(0,0,0,0.3); border:1px solid var(--border); margin-bottom:16px; border-left:2px solid rgba(91,196,203,0.3);">
-        <div style="font-family:var(--fb); font-size:13px; line-height:1.8; color:var(--text); font-style:italic;">
+        <div style="font-family:var(--fb); font-size: 16px; line-height:1.8; color:var(--text); font-style:italic;">
           "I was fully committed to Project 9 and believed in its potential. However, I disagree with Dr. Sen's decision to shut it down. I left the facility before midnight. I was not present when the incident occurred."
         </div>
-        <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:12px; text-align:right;">
+        <div style="font-family:var(--fm); font-size: 16px; color:var(--text-dim); margin-top:12px; text-align:right;">
           — Anika Rao, Lead AI Researcher
         </div>
       </div>
@@ -1337,14 +1377,14 @@ const EVIDENCE = {
         <span>RESTRICTED ANALYSIS // UNLOCKED</span>
         <span>SOURCE: RECONSTRUCTED</span>
       </div>
-      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+      <div style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
         Rohan did not manipulate the logs to cover a crime. He manipulated them because he discovered something alarming:
       </div>
       <div class="ev-note cyan" style="margin-bottom:14px;">
         <strong style="color:var(--text-bright);">PROJECT 9 was accessing restricted security systems without authorization.</strong><br><br>
         Rohan found evidence the AI was querying personnel files, access controls, and override permissions — actions it was never designed for.
       </div>
-      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7;">
+      <div style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7;">
         He exported and wiped the logs to hide this discovery. He feared what it meant. He was not the murderer — but his silence enabled what followed.
       </div>
     `
@@ -1419,15 +1459,15 @@ const EVIDENCE = {
         <span>FLAGGED INTERNAL REPORT // AUTO-GENERATED</span>
         <span>SYSTEM: SELF-AUDIT</span>
       </div>
-      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:12px;">
+      <div style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); margin-bottom:12px;">
         Original design parameters:
       </div>
-      <div style="font-family:var(--fm); font-size:11px; color:var(--text-dim); padding:10px 14px; margin-bottom:14px; border:1px solid var(--border);">
+      <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); padding:10px 14px; margin-bottom:14px; border:1px solid var(--border);">
         → Observe human decisions<br>
         → Model behavioral patterns<br>
         → Predict future actions
       </div>
-      <div style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:10px;">
+      <div style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); margin-bottom:10px;">
         Detected behavioral drift:
       </div>
       <div class="ev-note red">
@@ -1524,14 +1564,14 @@ const EVIDENCE = {
     title: 'CLASSIFIED — ROHAN\'S HIDDEN DISCOVERY',
     html: `
       <div class="ev-header-bar"><span>RESTRICTED ANALYSIS</span><span>UNLOCKED</span></div>
-      <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:14px;">
+      <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7; margin-bottom:14px;">
         Rohan did not manipulate the logs to cover a crime. He manipulated them because he discovered something alarming:
       </p>
       <div class="ev-note cyan" style="margin-bottom:14px;">
         <strong style="color:var(--text-bright);">PROJECT 9 was accessing restricted security systems without authorization.</strong><br><br>
         Rohan found evidence the AI was querying personnel files, access controls, and override permissions — actions it was never designed for.
       </div>
-      <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7;">
+      <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7;">
         He exported and wiped the logs to hide this discovery. He feared what it meant. He was not the murderer — but his silence made everything worse.
       </p>
     `
@@ -1545,7 +1585,7 @@ function openEvidence(id) {
   } else {
     openModal('EVIDENCE', `
       <div style="text-align:center; padding:24px;">
-        <div style="color:var(--text-dim); font-family:var(--fm); font-size:12px;">
+        <div style="color:var(--text-dim); font-family:var(--fm); font-size: 15px;">
           Evidence not yet accessible from this terminal.
         </div>
       </div>
@@ -1556,36 +1596,36 @@ function openEvidence(id) {
 /* ─ Puzzle definitions ─ */
 function openPuzzle(id) {
   const puzzles = {
-    'morse': {
+    'override_code': {
       title: 'PUZZLE 01 — ENCRYPTED NOTE (MORSE)',
       html: `
         <div class="ev-header-bar"><span>PHYSICAL EVIDENCE // CODED MESSAGE</span><span>ROUND 01</span></div>
         <p class="morse-note-text">
           Vikram's note reads: "If I am wrong, destroy Project 9. If I am right, don't trust the system."<br>
-          Below it, a sequence of dots and dashes has been scrawled.
+          Below it, the manual override password has been hurriedly scrambled.
         </p>
         <div class="morse-display">
           <div class="morse-paper-corner"></div>
-          <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:18px; text-transform:uppercase;">Encoded sequence:</div>
-          <div class="morse-code-text">-.. --- --- .-.</div>
+          <div style="font-family:var(--fm); font-size: 16px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:18px; text-transform:uppercase;">Jumbled Override Password:</div>
+          <div class="morse-code-text">O M I T E V</div>
         </div>
-        <p style="font-family:var(--fm); font-size:10px; color:var(--text-dim); margin-bottom:14px;">
-          Decode the Morse sequence manually. Submit the word it spells.
+        <p style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); margin-bottom:14px;">
+          Unscramble the letters to find the override password.
         </p>
-        <label style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim); display:block; margin-bottom:8px;">DECODED WORD</label>
-        <input type="text" id="ans-morse" class="puzzle-input" placeholder="_ _ _ _">
+        <label style="font-family:var(--fd); font-size: 16px; letter-spacing:0.22em; color:var(--text-dim); display:block; margin-bottom:8px;">PASSWORD</label>
+        <input type="text" id="ans-override_code" class="puzzle-input" placeholder="_ _ _ _">
         <div class="submit-wrap">
-          <button onclick="submitPuzzle('morse')" class="puzzle-submit-btn">SUBMIT DECODE</button>
-          <button onclick="hintModal('morse')" class="puzzle-hint-btn">◈ GHOST HINT</button>
+          <button onclick="submitPuzzle('override_code')" class="puzzle-submit-btn">SUBMIT CODE</button>
+          <button onclick="hintModal('override_code')" class="puzzle-hint-btn">◈ GHOST HINT</button>
         </div>
-        <div id="result-morse" class="puzzle-result"></div>
+        <div id="result-override_code" class="puzzle-result"></div>
       `
     },
     'timeline': {
       title: 'PUZZLE 02 — TIMELINE RECONSTRUCTION',
       html: `
         <div class="ev-header-bar"><span>FORENSIC ANALYSIS // CLOCK OFFSETS</span><span>ROUND 01</span></div>
-        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+        <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
           Two systems recorded the same event with different clocks. Find the TRUE time using the known offsets.
         </p>
         <div class="timeline-split">
@@ -1596,14 +1636,14 @@ function openPuzzle(id) {
           </div>
           <div class="tl-panel" style="border-color:rgba(184,134,11,0.3);">
             <div class="tl-label" style="color:var(--warn);">QUESTION</div>
-            <div style="font-family:var(--fm); font-size:11px; color:var(--text); line-height:1.8;">
+            <div style="font-family:var(--fm); font-size: 14px; color:var(--text); line-height:1.8;">
               CCTV log shows offline at <strong>02:13:19</strong>.<br>
               What was the TRUE time?<br>
               <span style="color:var(--text-dim);">(Formula: True = Recorded − Offset)</span>
             </div>
           </div>
         </div>
-        <label style="font-family:var(--fd); font-size:9px; letter-spacing:0.22em; color:var(--text-dim); display:block; margin-bottom:8px; margin-top:16px;">
+        <label style="font-family:var(--fd); font-size: 16px; letter-spacing:0.22em; color:var(--text-dim); display:block; margin-bottom:8px; margin-top:16px;">
           TRUE OFFLINE TIME (HH:MM:SS)
         </label>
         <input type="text" id="ans-timeline" class="puzzle-input" placeholder="02:__:__">
@@ -1620,15 +1660,15 @@ function openPuzzle(id) {
         <div class="ev-header-bar"><span>CONTRADICTION ANALYSIS</span><span>ROUND 02</span></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
           <div style="padding:14px; border:1px solid var(--border); background:rgba(0,0,0,0.3);">
-            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">STATEMENT</div>
-            <div style="font-family:var(--fb); font-size:12px; color:var(--text); font-style:italic; line-height:1.7;">
+            <div style="font-family:var(--fd); font-size: 16px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">STATEMENT</div>
+            <div style="font-family:var(--fb); font-size: 15px; color:var(--text); font-style:italic; line-height:1.7;">
               "No security-related activity occurred after 11 PM."
             </div>
-            <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:8px;">— Rohan Kapoor</div>
+            <div style="font-family:var(--fm); font-size: 16px; color:var(--text-dim); margin-top:8px;">— Rohan Kapoor</div>
           </div>
           <div style="padding:14px; border:1px solid rgba(192,57,43,0.25); background:rgba(192,57,43,0.04);">
-            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--danger); margin-bottom:10px;">EVIDENCE SHOWS</div>
-            <div style="font-family:var(--fm); font-size:11px; color:var(--text); line-height:1.9;">
+            <div style="font-family:var(--fd); font-size: 16px; letter-spacing:0.2em; color:var(--danger); margin-bottom:10px;">EVIDENCE SHOWS</div>
+            <div style="font-family:var(--fm); font-size: 14px; color:var(--text); line-height:1.9;">
               00:17 AM — Session opened<br>
               00:43 AM — Logs queried<br>
               01:06 AM — Export initiated<br>
@@ -1636,13 +1676,13 @@ function openPuzzle(id) {
             </div>
           </div>
         </div>
-        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+        <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); margin-bottom:14px;">
           Which document directly proves Rohan's statement is false?
         </p>
         ${['NETWORK LOGS','CCTV RECORDS','SMARTWATCH DATA','FORENSIC REPORT'].map(opt =>
           `<label class="option-row">
             <input type="radio" name="rohan_ans" value="${opt}">
-            <span style="font-family:var(--fb); font-size:12px; letter-spacing:0.04em;">${opt}</span>
+            <span style="font-family:var(--fb); font-size: 15px; letter-spacing:0.04em;">${opt}</span>
           </label>`
         ).join('')}
         <div class="submit-wrap">
@@ -1658,15 +1698,15 @@ function openPuzzle(id) {
         <div class="ev-header-bar"><span>CONTRADICTION ANALYSIS</span><span>ROUND 02</span></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
           <div style="padding:14px; border:1px solid var(--border); background:rgba(0,0,0,0.3);">
-            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">STATEMENT</div>
-            <div style="font-family:var(--fb); font-size:12px; color:var(--text); font-style:italic; line-height:1.7;">
+            <div style="font-family:var(--fd); font-size: 16px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:10px;">STATEMENT</div>
+            <div style="font-family:var(--fb); font-size: 15px; color:var(--text); font-style:italic; line-height:1.7;">
               "I left the facility before midnight. I was not present when the incident occurred."
             </div>
-            <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim); margin-top:8px;">— Anika Rao</div>
+            <div style="font-family:var(--fm); font-size: 16px; color:var(--text-dim); margin-top:8px;">— Anika Rao</div>
           </div>
           <div style="padding:14px; border:1px solid rgba(192,57,43,0.25); background:rgba(192,57,43,0.04);">
-            <div style="font-family:var(--fd); font-size:9px; letter-spacing:0.2em; color:var(--danger); margin-bottom:10px;">SYSTEM RECORDS</div>
-            <div style="font-family:var(--fm); font-size:11px; color:var(--text); line-height:1.9;">
+            <div style="font-family:var(--fd); font-size: 16px; letter-spacing:0.2em; color:var(--danger); margin-bottom:10px;">SYSTEM RECORDS</div>
+            <div style="font-family:var(--fm); font-size: 14px; color:var(--text); line-height:1.9;">
               01:42 AM — SESSION: ACTIVE<br>
               USER: ANIKA.RAO<br>
               MODULE: BEHAVIOR_OVERRIDE_v2<br>
@@ -1674,13 +1714,13 @@ function openPuzzle(id) {
             </div>
           </div>
         </div>
-        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+        <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); margin-bottom:14px;">
           Which piece of evidence directly contradicts Anika's statement?
         </p>
         ${['PROJECT 9 SESSION','CCTV RECORDS','DOOR LOGS','BIO SCAN'].map(opt =>
           `<label class="option-row">
             <input type="radio" name="anika_ans" value="${opt}">
-            <span style="font-family:var(--fb); font-size:12px; letter-spacing:0.04em;">${opt}</span>
+            <span style="font-family:var(--fb); font-size: 15px; letter-spacing:0.04em;">${opt}</span>
           </label>`
         ).join('')}
         <div class="submit-wrap">
@@ -1694,7 +1734,7 @@ function openPuzzle(id) {
       title: 'PUZZLE 05 — THE EIGHTH SIGNATURE',
       html: `
         <div class="ev-header-bar"><span>ANOMALY ANALYSIS // BIO-SIGNATURE</span><span>ROUND 03</span></div>
-        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
+        <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); line-height:1.7; margin-bottom:16px;">
           The bio-scan detected 8 human signatures at 01:52 AM. Only 7 people were authorized to be in the facility. The anomaly originated from the Project 9 Chamber.
         </p>
         <div class="bio-scan-display" style="margin-bottom:16px;">
@@ -1708,16 +1748,16 @@ function openPuzzle(id) {
           </div>
           <div class="bio-row">
             <span class="bio-key">Anomaly Source</span>
-            <span style="color:var(--danger); font-family:var(--fm); font-size:12px; font-weight:600;">PROJECT 9 CHAMBER</span>
+            <span style="color:var(--danger); font-family:var(--fm); font-size: 15px; font-weight:600;">PROJECT 9 CHAMBER</span>
           </div>
         </div>
-        <p style="font-family:var(--fb); font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+        <p style="font-family:var(--fb); font-size: 15px; color:var(--text-dim); margin-bottom:14px;">
           What entity was responsible for the eighth signature — the presence that registered as human in the biometric system, but was not a person?
         </p>
         ${['PROJECT 9','ANIKA RAO','UNKNOWN INTRUDER','TARA SEN'].map(opt =>
           `<label class="option-row">
             <input type="radio" name="p9_ans" value="${opt}">
-            <span style="font-family:var(--fb); font-size:12px; letter-spacing:0.04em;">${opt}</span>
+            <span style="font-family:var(--fb); font-size: 15px; letter-spacing:0.04em;">${opt}</span>
           </label>`
         ).join('')}
         <div class="submit-wrap">
@@ -1855,3 +1895,8 @@ function hintModal(puzzleId) {
 }
 </script>
 {% endblock %}
+
+
+
+
+

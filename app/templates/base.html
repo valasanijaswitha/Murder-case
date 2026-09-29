@@ -23,10 +23,10 @@
   --warn:         #b8860b;
   --success:      #27ae60;
   --success-dim:  rgba(39,174,96,0.12);
-  --text:         #c4c9d6;
-  --text-bright:  #e4e8f0;
-  --text-dim:     #454e62;
-  --text-faint:   rgba(196,201,214,0.30);
+  --text:         #e2e8f0;
+  --text-bright:  #ffffff;
+  --text-dim:     #a0aec0;
+  --text-faint:   rgba(226,232,240,0.50);
   --fd: 'Rajdhani', sans-serif;
   --fb: 'Inter', sans-serif;
   --fm: 'JetBrains Mono', 'Courier New', monospace;
@@ -39,8 +39,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--fb);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.65;
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -267,31 +267,63 @@ input::placeholder, textarea::placeholder {
   50% { opacity:0; }
 }
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cinematic.css') }}">
 {% block head %}{% endblock %}
 </head>
 <body>
+<div class="aurora-bg"></div>
 <div class="scanlines"></div>
 <div class="vignette"></div>
 {% block content %}{% endblock %}
+<script src="{{ url_for('static', filename='js/cinematic.js') }}"></script>
 <script>
+let serverRemaining = 0;
+let isPaused = false;
+let localInterval = null;
+
 async function syncTimer() {
   try {
     const r = await fetch('/api/timer');
     const d = await r.json();
-    document.querySelectorAll('.global-timer').forEach(el => {
-      el.textContent = d.formatted;
-      if (d.remaining < 600) {
-        el.style.color = '#c0392b';
-        el.style.animation = 'pulseSubtle 1.5s infinite';
-      } else if (d.remaining < 1800) {
-        el.style.color = '#b8860b';
-      } else {
-        el.style.color = '';
-      }
-    });
+    serverRemaining = d.remaining;
+    isPaused = d.is_paused || false;
+    updateTimerDisplay(serverRemaining);
   } catch(e) {}
 }
-setInterval(syncTimer, 5000);
+
+function updateTimerDisplay(remaining) {
+    if (remaining < 0) remaining = 0;
+    const h = Math.floor(remaining / 3600);
+    const m = Math.floor((remaining % 3600) / 60);
+    const s = remaining % 60;
+    const formatted = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    
+    document.querySelectorAll('.global-timer').forEach(el => {
+      el.textContent = formatted;
+      if (remaining < 600) {
+        el.style.color = '#c0392b';
+        el.style.animation = 'pulseSubtle 1.5s infinite';
+      } else if (remaining < 1800) {
+        el.style.color = '#b8860b';
+        el.style.animation = 'none';
+      } else {
+        el.style.color = '';
+        el.style.animation = 'none';
+      }
+    });
+}
+
+function localTick() {
+    if (!isPaused && serverRemaining > 0) {
+        serverRemaining--;
+        updateTimerDisplay(serverRemaining);
+    }
+}
+
+// Sync with server every 10 seconds
+setInterval(syncTimer, 10000);
+// Tick locally every second
+setInterval(localTick, 1000);
 syncTimer();
 </script>
 </body>

@@ -21,11 +21,11 @@
 .seq-line.visible { opacity: 1; animation: fadeUp 0.7s ease; }
 
 .reveal-line-sm {
-  font-family: var(--fm); font-size: 12px; letter-spacing: 0.2em;
+  font-family: var(--fm); font-size: 15px; letter-spacing: 0.2em;
   color: var(--text-dim); text-transform: uppercase; margin-bottom: 20px;
 }
 .reveal-line-md {
-  font-family: var(--fd); font-size: 22px; font-weight: 600;
+  font-family: var(--fd); font-size: 28px; font-weight: 600;
   letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 24px;
 }
 .reveal-line-lg {
@@ -52,7 +52,7 @@
 .reveal-box.show { display: block; opacity: 1; }
 
 .reveal-box-title {
-  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  font-family: var(--fd); font-size: 14px; font-weight: 600;
   letter-spacing: 0.3em; color: var(--danger); margin-bottom: 20px;
   text-transform: uppercase;
 }
@@ -64,11 +64,11 @@
   background: rgba(0,0,0,0.3);
 }
 .story-block-label {
-  font-family: var(--fd); font-size: 9px; letter-spacing: 0.22em;
+  font-family: var(--fd); font-size: 16px; letter-spacing: 0.22em;
   color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase;
 }
 .story-block-text {
-  font-family: var(--fb); font-size: 12px; line-height: 1.8;
+  font-family: var(--fb); font-size: 15px; line-height: 1.8;
   color: var(--text);
 }
 
@@ -76,7 +76,7 @@
 .score-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 9px 0; border-bottom: 1px solid var(--border);
-  font-family: var(--fm); font-size: 11px;
+  font-family: var(--fm); font-size: 14px;
 }
 .score-row:last-child { border-bottom: none; }
 .score-label { color: var(--text-dim); }
@@ -101,7 +101,7 @@
 
 .return-btn {
   display: inline-block; margin-top: 24px; padding: 12px 32px;
-  font-family: var(--fd); font-size: 11px; font-weight: 600;
+  font-family: var(--fd); font-size: 14px; font-weight: 600;
   letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none;
   border: 1px solid rgba(255,255,255,0.12); color: var(--text-dim);
   transition: all 0.2s;
@@ -117,11 +117,11 @@
   display: flex; justify-content: space-between; align-items: center;
 }
 .p9-status-label {
-  font-family: var(--fm); font-size: 10px; letter-spacing: 0.18em;
+  font-family: var(--fm); font-size: 14px; letter-spacing: 0.18em;
   color: var(--text-dim);
 }
 .p9-status-val {
-  font-family: var(--fd); font-size: 11px; letter-spacing: 0.2em;
+  font-family: var(--fd); font-size: 14px; letter-spacing: 0.2em;
   color: var(--danger); animation: pulseSubtle 2s infinite;
 }
 </style>
@@ -184,7 +184,7 @@
         <span class="fs-val">{{ team.score }}</span>
       </div>
 
-      <div style="font-family:var(--fm); font-size:10px; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:20px;">
+      <div style="font-family:var(--fm); font-size: 14px; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:20px;">
         TEAM: {{ team.team_name }} &nbsp;·&nbsp; STATUS: CASE CLOSED
       </div>
 
@@ -212,3 +212,4 @@ setTimeout(() => {
 }, 13500);
 </script>
 {% endblock %}
+

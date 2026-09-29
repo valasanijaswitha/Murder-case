@@ -1,0 +1,112 @@
+/* Cinematic Effects - Vanilla JS implementations inspired by React Bits */
+
+/* 1. Aurora Background */
+.aurora-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #03040a;
+    z-index: -2;
+    overflow: hidden;
+}
+.aurora-bg::before, .aurora-bg::after {
+    content: '';
+    position: absolute;
+    width: 150vw;
+    height: 150vh;
+    top: -25vh;
+    left: -25vw;
+    background: radial-gradient(circle at 50% 50%, rgba(91, 196, 203, 0.08), transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(28, 59, 90, 0.15), transparent 50%);
+    filter: blur(60px);
+    animation: auroraShift 20s infinite alternate ease-in-out;
+}
+.aurora-bg::after {
+    background: radial-gradient(circle at 20% 80%, rgba(192, 57, 43, 0.05), transparent 50%);
+    animation: auroraShift2 25s infinite alternate ease-in-out;
+}
+@keyframes auroraShift {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(5%, 5%) scale(1.1); }
+}
+@keyframes auroraShift2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-5%, -5%) scale(1.15); }
+}
+
+/* 2. Glitch Text */
+.glitch-text {
+    position: relative;
+    display: inline-block;
+    color: var(--text-bright, #fff);
+}
+.glitch-text::before, .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg, #07090f);
+}
+.glitch-text::before {
+    left: 2px;
+    text-shadow: -1px 0 rgba(192,57,43,0.8);
+    clip: rect(24px, 550px, 90px, 0);
+    animation: glitch-anim 3s infinite linear alternate-reverse;
+}
+.glitch-text::after {
+    left: -2px;
+    text-shadow: -1px 0 rgba(91,196,203,0.8);
+    clip: rect(85px, 550px, 140px, 0);
+    animation: glitch-anim 2.5s infinite linear alternate-reverse;
+}
+@keyframes glitch-anim {
+    0% { clip: rect(22px, 9999px, 83px, 0); }
+    20% { clip: rect(69px, 9999px, 14px, 0); }
+    40% { clip: rect(10px, 9999px, 55px, 0); }
+    60% { clip: rect(98px, 9999px, 34px, 0); }
+    80% { clip: rect(33px, 9999px, 93px, 0); }
+    100% { clip: rect(55px, 9999px, 12px, 0); }
+}
+
+/* 3. Glass Surface / Spotlight Card */
+.glass-surface {
+    background: rgba(11, 16, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.glass-surface:hover {
+    border-color: rgba(91, 196, 203, 0.3);
+}
+/* Spotlight effect applied via JS */
+.glass-surface::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(91, 196, 203, 0.06), transparent 40%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+.glass-surface:hover::before {
+    opacity: 1;
+}
+
+/* 4. Animated List Item */
+.animated-list-item {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeUpItem 0.4s ease forwards;
+}
+@keyframes fadeUpItem {
+    to { opacity: 1; transform: translateY(0); }
+}

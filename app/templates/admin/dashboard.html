@@ -1,354 +1,132 @@
-{% extends "base.html" %}
-{% block head %}
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
 <style>
-.adm-wrap {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  background: var(--bg);
-  padding: 18px 22px;
-  font-family: var(--fb);
+/* Dashboard specific styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
 }
-/* Header */
-.adm-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-bottom: 14px; border-bottom: 1px solid rgba(192,57,43,0.2);
-  margin-bottom: 20px; flex-shrink: 0;
+.stat-card {
+    padding: 24px;
+    border-radius: 4px;
 }
-.adm-brand .tag {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.28em;
-  color: var(--danger); margin-bottom: 4px; opacity: 0.7;
+.stat-val {
+    font-family: var(--fd); font-size: 36px; font-weight: 700;
+    color: var(--text-bright); line-height: 1; margin-bottom: 8px;
 }
-.adm-brand .title {
-  font-family: var(--fd); font-size: 20px; font-weight: 700;
-  letter-spacing: 0.18em; color: var(--text-bright);
-}
-.timer-ctl {
-  display: flex; align-items: center; gap: 12px;
-}
-.adm-timer {
-  font-family: var(--fm); font-size: 22px; font-weight: 400;
-  color: var(--text-bright); letter-spacing: 0.08em;
-}
-.adm-timer.warn { color: var(--warn); }
-.adm-timer.crit { color: var(--danger); animation: pulseSubtle 1.5s infinite; }
-
-/* Control buttons */
-.ctl-btn {
-  padding: 7px 14px; cursor: pointer;
-  font-family: var(--fd); font-size: 10px;
-  letter-spacing: 0.14em; font-weight: 600;
-  text-transform: uppercase; border: 1px solid; transition: all 0.18s;
-  background: transparent;
-}
-.ctl-btn-red { border-color: rgba(192,57,43,0.45); color: var(--danger); }
-.ctl-btn-red:hover { background: var(--danger); color: #fff; }
-.ctl-btn-ac  { border-color: var(--border-ac); color: var(--accent); }
-.ctl-btn-ac:hover  { background: var(--accent); color: #07090f; }
-.ctl-btn-dim { border-color: var(--border); color: var(--text-dim); }
-.ctl-btn-dim:hover { border-color: var(--border-ac); color: var(--accent); }
-
-/* Nav links */
-.adm-nav {
-  display: flex; gap: 0; margin-bottom: 20px; flex-shrink: 0;
-}
-.adm-nav-link {
-  padding: 6px 16px;
-  font-family: var(--fd); font-size: 10px; letter-spacing: 0.16em;
-  text-transform: uppercase; text-decoration: none;
-  border: 1px solid; margin-right: -1px; transition: all 0.15s;
-}
-.adm-nav-link.active { border-color: var(--border-ac); color: var(--text-bright); background: var(--accent-dim); }
-.adm-nav-link.inactive { border-color: var(--border); color: var(--text-dim); }
-.adm-nav-link.inactive:hover { color: var(--accent); border-color: var(--border-ac); }
-
-/* Stats bar */
-.stats-bar {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-  margin-bottom: 20px; flex-shrink: 0;
-}
-.stat-item {
-  padding: 12px 16px;
-  background: rgba(9,13,24,0.97); border: 1px solid var(--border);
-}
-.stat-item-val {
-  font-family: var(--fd); font-size: 24px; font-weight: 700;
-  color: var(--text-bright); line-height: 1; margin-bottom: 4px;
-}
-.stat-item-lbl {
-  font-family: var(--fd); font-size: 8px; letter-spacing: 0.2em;
-  color: var(--text-dim); text-transform: uppercase;
+.stat-lbl {
+    font-family: var(--fm); font-size: 14px; letter-spacing: 0.2em;
+    color: var(--text-dim); text-transform: uppercase;
 }
 
-/* Teams grid */
 .teams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px; overflow-y: auto; flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
 }
 .team-card {
-  background: rgba(9,13,24,0.97);
-  border: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  transition: border-color 0.18s;
+    padding: 20px;
+    border-radius: 4px;
+    display: flex; flex-direction: column; gap: 16px;
 }
-.team-card:hover { border-color: rgba(255,255,255,0.12); }
-.team-card.status-finished { border-color: rgba(39,174,96,0.25); }
-
-.tc-head {
-  padding: 12px 14px 10px;
-  border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: flex-start;
+.tc-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
 }
 .tc-name {
-  font-family: var(--fd); font-size: 15px; font-weight: 700;
-  letter-spacing: 0.1em; color: var(--text-bright);
+    font-family: var(--fd); font-size: 22px; font-weight: 700;
+    letter-spacing: 0.1em; color: var(--text-bright);
 }
 .tc-code {
-  font-family: var(--fm); font-size: 9px; color: var(--text-dim);
-  margin-top: 2px;
+    font-family: var(--fm); font-size: 14px; color: var(--text-dim);
 }
 .tc-status {
-  font-family: var(--fm); font-size: 9px; letter-spacing: 0.14em;
-  padding: 2px 8px; border: 1px solid;
+    font-family: var(--fm); font-size: 16px; padding: 4px 8px; border: 1px solid;
+    border-radius: 2px;
 }
-.tc-status.active   { color: var(--success);  border-color: rgba(39,174,96,0.3); }
-.tc-status.paused   { color: var(--warn);     border-color: rgba(184,134,11,0.3); }
-.tc-status.finished { color: var(--accent);   border-color: var(--border-ac); }
+.tc-status.active { color: var(--success); border-color: rgba(39,174,96,0.4); }
+.tc-status.finished { color: var(--accent); border-color: var(--border-ac); }
 
-.tc-body { padding: 12px 14px; flex-grow: 1; }
-.tc-meta-row {
-  display: flex; gap: 0; margin-bottom: 10px;
+.tc-metrics {
+    display: flex; gap: 10px;
 }
-.tc-meta-item {
-  flex: 1; padding: 8px 10px; text-align: center;
-  background: rgba(0,0,0,0.3); border: 1px solid var(--border);
-  margin-right: -1px;
+.tc-metric {
+    flex: 1; padding: 10px; background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border); text-align: center;
 }
-.tc-meta-val {
-  font-family: var(--fd); font-size: 16px; font-weight: 700;
-  color: var(--text-bright); line-height: 1; margin-bottom: 2px;
+.tc-metric-val {
+    font-family: var(--fd); font-size: 22px; font-weight: 700;
+    color: var(--text-bright); margin-bottom: 4px;
 }
-.tc-meta-lbl {
-  font-family: var(--fd); font-size: 7px; letter-spacing: 0.18em;
-  color: var(--text-dim); text-transform: uppercase;
+.tc-metric-lbl {
+    font-family: var(--fd); font-size: 15px; letter-spacing: 0.18em;
+    color: var(--text-dim); text-transform: uppercase;
 }
-.tc-players {
-  font-family: var(--fm); font-size: 10px; color: var(--text-dim);
-  line-height: 1.7; margin-bottom: 8px;
-}
-.tc-solved {
-  font-family: var(--fm); font-size: 9px; color: var(--text-dim);
-  line-height: 1.6;
-}
-.tc-solved span.done { color: var(--success); }
-.tc-solved span.todo { color: rgba(255,255,255,0.15); }
 
-.tc-actions {
-  padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px;
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
 }
-.tc-act-btn {
-  padding: 6px 4px; text-align: center; cursor: pointer;
-  font-family: var(--fd); font-size: 8px; letter-spacing: 0.1em;
-  text-transform: uppercase; border: 1px solid var(--border);
-  color: var(--text-dim); background: transparent; transition: all 0.15s;
-}
-.tc-act-btn:hover { border-color: var(--border-ac); color: var(--accent); }
-.tc-act-btn.warn-btn:hover { border-color: rgba(192,57,43,0.5); color: var(--danger); }
-
-/* Status message */
-.adm-message {
-  position: fixed; top: 18px; right: 22px; z-index: 300;
-  padding: 10px 18px;
-  background: rgba(9,22,13,0.97); border: 1px solid rgba(39,174,96,0.4);
-  font-family: var(--fd); font-size: 10px; letter-spacing: 0.2em; color: var(--success);
-  display: none; animation: fadeUp 0.3s ease;
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
 }
 </style>
 {% endblock %}
 
-{% block content %}
-<div id="adm-msg" class="adm-message">ACTION COMPLETE</div>
+{% block admin_content %}
+<h2 class="section-title decrypted-text" data-text="LIVE TELEMETRY">LIVE TELEMETRY</h2>
 
-<div class="adm-wrap">
-
-  <!-- Header -->
-  <header class="adm-header">
-    <div class="adm-brand">
-      <div class="tag">HELIX DYNAMICS // ADMINISTRATOR OVERRIDE</div>
-      <div class="title">EVENT CONTROL — THE LAST CASE</div>
+<div class="stats-grid animated-list">
+    <div class="stat-card glass-surface animated-list-item">
+        <div class="stat-val">{{ teams|length }}</div>
+        <div class="stat-lbl">Registered</div>
     </div>
-
-    <div class="timer-ctl">
-      <!-- Timer controls -->
-      <button class="ctl-btn ctl-btn-dim" onclick="adminTimer('start')">START</button>
-      <button class="ctl-btn ctl-btn-red" onclick="adminTimer('pause')">PAUSE</button>
-      <button class="ctl-btn ctl-btn-dim" onclick="adminTimer('add')">+5 MIN</button>
-
-      <div style="width:1px; height:28px; background:var(--border);"></div>
-
-      <div style="text-align:right;">
-        <div class="adm-timer global-timer">{{ time_str }}</div>
-        <div style="font-family:var(--fd); font-size:8px; letter-spacing:0.2em; color:var(--text-dim);">
-          GLOBAL TIMER
-        </div>
-      </div>
-
-      <a href="{{ url_for('admin.logout') }}"
-         style="font-family:var(--fd); font-size:9px; letter-spacing:0.16em;
-                color:var(--text-dim); text-decoration:none; padding:6px 10px;
-                border:1px solid var(--border); transition:color 0.2s;"
-         onmouseover="this.style.color='var(--danger)'"
-         onmouseout="this.style.color='var(--text-dim)'">LOGOUT</a>
+    <div class="stat-card glass-surface animated-list-item">
+        <div class="stat-val" style="color:var(--success);">{{ teams|selectattr('status','equalto','ACTIVE')|list|length }}</div>
+        <div class="stat-lbl">Active Now</div>
     </div>
-  </header>
-
-  <!-- Nav -->
-  <div class="adm-nav">
-    <a href="{{ url_for('admin.dashboard') }}" class="adm-nav-link active">TEAMS</a>
-    <a href="{{ url_for('admin.leaderboard') }}" class="adm-nav-link inactive">LEADERBOARD</a>
-    <a href="{{ url_for('admin.activity') }}" class="adm-nav-link inactive">ACTIVITY LOG</a>
-  </div>
-
-  <!-- Stats bar -->
-  <div class="stats-bar">
-    <div class="stat-item">
-      <div class="stat-item-val">{{ teams|length }}</div>
-      <div class="stat-item-lbl">Teams Registered</div>
+    <div class="stat-card glass-surface animated-list-item">
+        <div class="stat-val" style="color:var(--accent);">{{ teams|selectattr('status','equalto','FINISHED')|list|length }}</div>
+        <div class="stat-lbl">Completed</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-item-val" style="color:var(--success);">
-        {{ teams|selectattr('status','equalto','ACTIVE')|list|length }}
-      </div>
-      <div class="stat-item-lbl">Active Teams</div>
+    <div class="stat-card glass-surface animated-list-item">
+        <div class="stat-val">{% if teams %}{{ (teams|map(attribute='score')|sum / teams|length)|round|int }}{% else %}0{% endif %}</div>
+        <div class="stat-lbl">Avg Score</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-item-val" style="color:var(--accent);">
-        {{ teams|selectattr('status','equalto','FINISHED')|list|length }}
-      </div>
-      <div class="stat-item-lbl">Completed</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-item-val">
-        {% if teams %}{{ (teams|map(attribute='score')|sum / teams|length)|round|int }}{% else %}0{% endif %}
-      </div>
-      <div class="stat-item-lbl">Avg Score</div>
-    </div>
-  </div>
-
-  <!-- Teams grid -->
-  <div class="teams-grid">
-    {% for team in teams %}
-    <div class="team-card status-{{ team.status|lower }}">
-
-      <div class="tc-head">
-        <div>
-          <div class="tc-name">{{ team.team_name }}</div>
-          <div class="tc-code">{{ team.team_code }}</div>
-        </div>
-        <div class="tc-status {{ team.status|lower }}">{{ team.status }}</div>
-      </div>
-
-      <div class="tc-body">
-        <div class="tc-meta-row">
-          <div class="tc-meta-item">
-            <div class="tc-meta-val">0{{ team.current_round }}</div>
-            <div class="tc-meta-lbl">Round</div>
-          </div>
-          <div class="tc-meta-item">
-            <div class="tc-meta-val">{{ team.score }}</div>
-            <div class="tc-meta-lbl">Score</div>
-          </div>
-          <div class="tc-meta-item">
-            <div class="tc-meta-val" style="color:var(--accent);">{{ team.ghost_points }}</div>
-            <div class="tc-meta-lbl">Ghost</div>
-          </div>
-        </div>
-
-        <div class="tc-players">
-          {{ team.player1_name }}<br>{{ team.player2_name }}
-        </div>
-
-        <!-- Puzzle solved indicators -->
-        {% set solved = team.solved_puzzles.split(',') if team.solved_puzzles else [] %}
-        <div class="tc-solved">
-          {% for pid, label in [('morse','MRS'),('timeline','TML'),('rohan_lie','RHN'),('anika_lie','ANK'),('p9_motive','P9')] %}
-          <span class="{% if pid in solved %}done{% else %}todo{% endif %}">{{ label }}</span>
-          {% if not loop.last %} · {% endif %}
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="tc-actions">
-        <button class="tc-act-btn warn-btn"
-                onclick="teamAction({{ team.id }}, 'pause')">
-          {% if team.status == 'PAUSED' %}RESUME{% else %}PAUSE{% endif %}
-        </button>
-        <button class="tc-act-btn"
-                onclick="teamAction({{ team.id }}, 'ghost')">+GHOST</button>
-        <button class="tc-act-btn"
-                onclick="forceRound({{ team.id }}, {{ team.current_round }})">ROUND</button>
-        <a href="{{ url_for('admin.activity') }}"
-           class="tc-act-btn" style="text-align:center; text-decoration:none; display:block; line-height:1.6;">LOGS</a>
-      </div>
-    </div>
-    {% else %}
-    <div style="grid-column:1/-1; display:flex; align-items:center; justify-content:center;
-                padding:60px; border:1px dashed var(--border);">
-      <div style="font-family:var(--fd); font-size:14px; letter-spacing:0.2em; color:var(--text-dim);">
-        NO TEAMS REGISTERED
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-
 </div>
 
-<script>
-async function adminTimer(action) {
-  const urls = {
-    start: '/api/admin/timer/start',
-    pause: '/api/admin/timer/pause',
-    add:   '/api/admin/timer/add'
-  };
-  const body = action === 'add' ? JSON.stringify({seconds: 300}) : '{}';
-  try {
-    await fetch(urls[action], {method:'POST', headers:{'Content-Type':'application/json'}, body});
-    showMsg(action === 'add' ? '+5 MIN ADDED' : action.toUpperCase() + ' — OK');
-  } catch(e) {}
-}
+<h2 class="section-title decrypted-text" data-text="ACTIVE TEAMS">ACTIVE TEAMS</h2>
 
-async function teamAction(id, action) {
-  const urls = { pause: `/api/admin/team/${id}/pause`, ghost: `/api/admin/team/${id}/ghost` };
-  try {
-    await fetch(urls[action], {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
-    showMsg('ACTION APPLIED — REFRESHING');
-    setTimeout(() => location.reload(), 1200);
-  } catch(e) {}
-}
-
-async function forceRound(id, current) {
-  const next = Math.min(current + 1, 4);
-  if(!confirm(`Force team ${id} to Round ${next}?`)) return;
-  try {
-    await fetch(`/api/admin/team/${id}/round`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({round: next})
-    });
-    showMsg('ROUND FORCED — REFRESHING');
-    setTimeout(() => location.reload(), 1200);
-  } catch(e) {}
-}
-
-function showMsg(txt) {
-  const el = document.getElementById('adm-msg');
-  el.textContent = txt;
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 2500);
-}
-
-// Auto-refresh every 15s
-setTimeout(() => location.reload(), 15000);
-</script>
+<div class="teams-grid animated-list">
+    {% for team in teams %}
+    <div class="team-card glass-surface animated-list-item">
+        <div class="tc-header">
+            <div>
+                <div class="tc-name">{{ team.team_name }}</div>
+                <div class="tc-code">{{ team.team_code }}</div>
+            </div>
+            <div class="tc-status {{ team.status|lower }}">{{ team.status }}</div>
+        </div>
+        
+        <div class="tc-metrics">
+            <div class="tc-metric">
+                <div class="tc-metric-val">0{{ team.current_round }}</div>
+                <div class="tc-metric-lbl">Round</div>
+            </div>
+            <div class="tc-metric">
+                <div class="tc-metric-val">{{ team.score }}</div>
+                <div class="tc-metric-lbl">Score</div>
+            </div>
+            <div class="tc-metric">
+                <div class="tc-metric-val" style="color:var(--accent);">{{ team.ghost_points }}</div>
+                <div class="tc-metric-lbl">Ghost</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}
+

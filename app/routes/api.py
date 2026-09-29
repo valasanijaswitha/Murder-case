@@ -7,10 +7,11 @@ api_bp = Blueprint('api', __name__)
 @api_bp.route('/timer')
 def get_timer():
     remaining = GameEngine.get_remaining_seconds()
+    timer = GameEngine.get_timer()
     h = remaining // 3600
     m = (remaining % 3600) // 60
     s = remaining % 60
-    return jsonify({"remaining": remaining, "formatted": f"{h:02d}:{m:02d}:{s:02d}"})
+    return jsonify({"remaining": remaining, "formatted": f"{h:02d}:{m:02d}:{s:02d}", "is_paused": timer.is_paused})
 
 @api_bp.route('/team/state')
 def team_state():
@@ -23,6 +24,7 @@ def team_state():
         "score": team.score,
         "ghost_points": team.ghost_points,
         "current_round": team.current_round,
+        "authorized_round": getattr(team, 'authorized_round', 1),
         "solved_puzzles": team.solved_puzzles.split(',') if team.solved_puzzles else [],
         "unlocked_evidence": team.unlocked_evidence.split(',') if team.unlocked_evidence else [],
         "status": team.status
@@ -94,7 +96,9 @@ def admin_force_round(team_id):
     data = request.json
     team = Team.query.get(team_id)
     if team:
-        team.current_round = int(data.get('round', team.current_round))
+        target_round = int(data.get('round', team.current_round))
+        team.current_round = target_round
+        team.authorized_round = target_round
         db.session.commit()
     return jsonify({"ok": True})
 

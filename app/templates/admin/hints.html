@@ -1,0 +1,97 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+
+.table-container {
+    background: rgba(11, 16, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+    background: rgba(0, 0, 0, 0.4); padding: 16px; text-align: left;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.16em; color: var(--text-dim); text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+td {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    font-family: var(--fb); font-size: 16px; color: var(--text-bright);
+}
+tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.ghost-badge {
+    font-family: var(--fm); font-size: 16px; font-weight: 700;
+    color: var(--accent);
+}
+.ghost-badge.low { color: var(--warn); }
+
+.action-btn {
+    padding: 6px 12px;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--text-dim);
+    background: transparent; border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+}
+.action-btn:hover { border-color: var(--border-ac); color: var(--accent); }
+.action-btn.danger:hover { border-color: rgba(192,57,43,0.5); color: var(--danger); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<h2 class="section-title decrypted-text" data-text="GHOST POINTS & HINT MANAGEMENT">GHOST POINTS & HINT MANAGEMENT</h2>
+
+<div class="table-container glass-surface animated-list">
+    <table class="animated-list-item">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Ghost Points Available</th>
+                <th>Hint Usage History</th>
+                <th>Manual Adjustments</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td style="font-weight:600;">{{ team.team_name }} <span style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); display:block;">{{ team.team_code }}</span></td>
+                <td><span class="ghost-badge {% if team.ghost_points < 2 %}low{% endif %}">{{ team.ghost_points }}</span></td>
+                <td style="font-size: 14px; color:var(--text-dim);">
+                    <!-- We would query ActivityLog for 'HINT_USED' here -->
+                    No hints used yet.
+                </td>
+                <td style="display:flex; gap:10px;">
+                    <button class="action-btn" onclick="adjustGhost({{ team.id }}, 'add')">+1 GHOST POINT</button>
+                    <button class="action-btn danger" onclick="adjustGhost({{ team.id }}, 'sub')">-1 GHOST POINT</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+async function adjustGhost(id, action) {
+    // Currently only 'add' is mapped in the api. We can implement 'sub' if needed.
+    if (action === 'sub') {
+        alert('Subtraction endpoint coming soon. Adding is supported.');
+        return;
+    }
+    try {
+        await fetch(`/api/admin/team/${id}/ghost`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+        location.reload();
+    } catch(e) {}
+}
+</script>
+{% endblock %}
+

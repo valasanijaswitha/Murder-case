@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+  .story-wrap {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(11,16,28,0.95) 0%, rgba(3,5,11,1) 100%);
+    padding: 40px; position: relative;
+    overflow: hidden;
+  }
+  .story-container {
+    max-width: 680px; width: 100%;
+    position: relative; z-index: 10;
+  }
+  
+  .slide {
+    display: none;
+    animation: fadeUp 0.6s ease forwards;
+  }
+  .slide.active { display: block; }
+  
+  .st-label {
+    font-family: var(--fd); font-size: 14px; letter-spacing: 0.3em;
+    color: var(--accent); margin-bottom: 20px; text-transform: uppercase;
+    border-left: 2px solid var(--accent); padding-left: 12px;
+  }
+  .st-title {
+    font-family: var(--fd); font-size: 42px; font-weight: 700;
+    letter-spacing: 0.12em; color: var(--text-bright); line-height: 1.1;
+    margin-bottom: 30px; text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+  }
+  .st-text {
+    font-family: var(--fb); font-size: 16px; color: var(--text);
+    line-height: 1.8; margin-bottom: 24px; font-weight: 300;
+  }
+  .st-text strong {
+    color: var(--text-bright); font-weight: 500;
+  }
+  
+  .st-nav {
+    display: flex; gap: 16px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;
+    align-items: center; justify-content: space-between;
+  }
+  .nav-buttons {
+    display: flex; gap: 12px;
+  }
+  
+  .btn-large {
+    padding: 14px 28px; font-size: 16px; letter-spacing: 0.2em;
+  }
+  
+  /* Initial cover */
+  .cover-slide { text-align: center; }
+  .cover-slide .st-label { border-left: none; padding-left: 0; justify-content: center; text-align: center; margin-bottom: 30px; }
+  .cover-slide .st-title { font-size: 56px; margin-bottom: 10px; animation: flicker 4s infinite; }
+  .cover-sub { font-family: var(--fm); font-size: 14px; letter-spacing: 0.25em; color: var(--text-dim); margin-bottom: 60px; }
+  
+  .skip-btn {
+    font-family: var(--fm); font-size: 14px; letter-spacing: 0.1em;
+    color: var(--text-dim); background: none; border: none; cursor: pointer;
+    text-transform: uppercase; text-decoration: underline; margin-top: 24px;
+  }
+  .skip-btn:hover { color: var(--text); }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="story-wrap">
+  <div class="story-container">
+    
+    <!-- SLIDE 0: COVER -->
+    <div class="slide cover-slide {% if is_briefing %}active{% endif %}" id="slide-0">
+      <div class="st-label">CLASSIFIED DOSSIER</div>
+      <div class="st-title">THE LAST CASE</div>
+      <div class="cover-sub">CASE 09 // THE SILENT SIGNAL</div>
+      
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <button class="btn btn-primary btn-large" onclick="nextSlide()">READ STORY</button>
+        {% if is_briefing %}
+        <form action="{{ url_for('team.complete_briefing') }}" method="POST">
+          <button type="submit" class="skip-btn">SKIP STORY</button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('team.dashboard') }}" class="skip-btn" style="text-decoration:none;">BACK TO INVESTIGATION</a>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- SLIDE 1 -->
+    <div class="slide {% if not is_briefing %}active{% endif %}" id="slide-1">
+      <div class="st-label">01 // THE FACILITY</div>
+      <div class="st-title">ORION RESEARCH FACILITY</div>
+      <div class="st-text">
+        The Orion Research Facility is a restricted, highly secure research center operated by <strong>Helix Dynamics</strong>.
+      </div>
+      <div class="st-text">
+        Deep within its walls lies <strong>Project 9</strong>, an advanced artificial intelligence system designed to predict human behavior and anticipate future events with terrifying accuracy.
+      </div>
+      <div class="st-text">
+        Until tonight, it was Helix Dynamics' most prized, closely guarded secret.
+      </div>
+      
+      <div class="st-nav">
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">PAGE 1 OF 4</div>
+        <div class="nav-buttons">
+          <button class="btn btn-primary" onclick="nextSlide()">NEXT ➔</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SLIDE 2 -->
+    <div class="slide" id="slide-2">
+      <div class="st-label">02 // THE INCIDENT</div>
+      <div class="st-title">THE LOCKED ROOM</div>
+      <div class="st-text">
+        At approximately 02:19 AM, <strong>Dr. Vikram Sen</strong>, the director of the facility, was found dead inside his private laboratory.
+      </div>
+      <div class="st-text">
+        The laboratory was securely locked from the inside. There were no signs of forced entry, no struggle, and no immediate cause of death apparent to the first responders.
+      </div>
+      <div class="st-text">
+        The room appeared impenetrable. Yet, the facility's access logs, surveillance records, and system timestamps tell a conflicting story. They do not agree with each other, or with the statements of the staff.
+      </div>
+      
+      <div class="st-nav">
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">PAGE 2 OF 4</div>
+        <div class="nav-buttons">
+          <button class="btn btn-ghost" onclick="prevSlide()">← PREV</button>
+          <button class="btn btn-primary" onclick="nextSlide()">NEXT ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide" id="slide-3">
+      <div class="st-label">03 // THE ANOMALY</div>
+      <div class="st-title">THE EIGHTH SIGNATURE</div>
+      <div class="st-text">
+        A suspicious discrepancy has been uncovered in the facility's internal sensor records: <strong>eight human signatures</strong> were detected in the restricted sector tonight.
+      </div>
+      <div class="st-text">
+        However, only <strong>seven authorized personnel</strong> were recorded as being present in the facility. 
+      </div>
+      <div class="st-text">
+        Someone manipulated the system. Someone inside the facility knows far more than they are admitting.
+      </div>
+      
+      <div class="st-nav">
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">PAGE 3 OF 4</div>
+        <div class="nav-buttons">
+          <button class="btn btn-ghost" onclick="prevSlide()">← PREV</button>
+          <button class="btn btn-primary" onclick="nextSlide()">NEXT ➔</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide" id="slide-4">
+      <div class="st-label">04 // THE PREDICTION</div>
+      <div class="st-title">PROJECT 9</div>
+      <div class="st-text">
+        Before Vikram Sen's body was discovered, <strong>Project 9</strong> had already generated a prediction connected to his death.
+      </div>
+      <div class="st-text">
+        Your objective is to uncover what happened, who caused it, why it happened, and how Project 9 became involved in the director's demise.
+      </div>
+      <div class="st-text" style="color:var(--danger); font-weight:500;">
+        Trust no one's initial statement. The evidence will not lie.
+      </div>
+      
+      <div class="st-nav">
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">PAGE 4 OF 4</div>
+        <div class="nav-buttons">
+          <button class="btn btn-ghost" onclick="prevSlide()">← PREV</button>
+          
+          {% if is_briefing %}
+          <form action="{{ url_for('team.complete_briefing') }}" method="POST" style="margin:0;">
+            <button type="submit" class="btn btn-primary" style="background:var(--danger-dim); border-color:var(--danger); color:var(--danger);">BEGIN INVESTIGATION ➔</button>
+          </form>
+          {% else %}
+          <a href="{{ url_for('team.investigation') }}" class="btn btn-primary" style="background:var(--danger-dim); border-color:var(--danger); color:var(--danger);">RETURN TO INVESTIGATION ➔</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentSlide = {% if is_briefing %}0{% else %}1{% endif %};
+  const totalSlides = 4;
+  
+  function updateSlides() {
+    document.querySelectorAll('.slide').forEach((el, index) => {
+      if (index === currentSlide) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+    });
+  }
+  
+  function nextSlide() {
+    if (currentSlide < totalSlides) {
+      currentSlide++;
+      updateSlides();
+    }
+  }
+  
+  function prevSlide() {
+    if (currentSlide > 0) {
+      currentSlide--;
+      updateSlides();
+    }
+  }
+</script>
+{% endblock %}
+

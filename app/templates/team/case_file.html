@@ -29,18 +29,18 @@
   <header style="display:flex; align-items:center; justify-content:space-between;
                  padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:24px;">
     <div>
-      <div style="font-family:var(--fm); font-size:9px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:4px;">
+      <div style="font-family:var(--fm); font-size: 16px; letter-spacing:0.28em; color:var(--text-dim); margin-bottom:4px;">
         CASE 09 // EVIDENCE ARCHIVE
       </div>
-      <div style="font-family:var(--fd); font-size:20px; font-weight:700; letter-spacing:0.16em; color:var(--text-bright);">
+      <div style="font-family:var(--fd); font-size: 26px; font-weight:700; letter-spacing:0.16em; color:var(--text-bright);">
         EVIDENCE BOARD
       </div>
     </div>
     <div style="display:flex; gap:12px; align-items:center;">
-      <div style="font-family:var(--fm); font-size:10px; color:var(--text-dim);">
+      <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">
         {{ (unlocked|reject('equalto','')|list)|length }} evidence item(s) collected
       </div>
-      <a href="{{ url_for('team.investigation') }}" class="btn btn-ghost" style="font-size:10px;">← INVESTIGATION</a>
+      <a href="{{ url_for('team.investigation') }}" class="btn btn-ghost" style="font-size: 14px;">← INVESTIGATION</a>
     </div>
   </header>
 
@@ -49,7 +49,7 @@
   <div style="flex-grow:1; display:flex; align-items:center; justify-content:center;">
     <div style="text-align:center; opacity:0.35;">
       <div style="font-family:var(--fd); font-size:28px; letter-spacing:0.2em; margin-bottom:12px;">NO EVIDENCE</div>
-      <div style="font-family:var(--fm); font-size:11px; letter-spacing:0.14em; color:var(--text-dim);">
+      <div style="font-family:var(--fm); font-size: 14px; letter-spacing:0.14em; color:var(--text-dim);">
         Begin the investigation to collect evidence.
       </div>
     </div>
@@ -70,10 +70,10 @@
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
         <div style="width:4px; height:4px; border-radius:50%;
                     background:{% if cat == 'CRITICAL' %}var(--danger){% elif cat == 'PROJECT 9' %}var(--accent){% elif cat == 'STATEMENT' %}rgba(184,134,11,0.8){% else %}rgba(255,255,255,0.2){% endif %};"></div>
-        <div style="font-family:var(--fd); font-size:9px; font-weight:600; letter-spacing:0.24em;
+        <div style="font-family:var(--fd); font-size: 16px; font-weight:600; letter-spacing:0.24em;
                     color:var(--text-dim); text-transform:uppercase;">{{ cat }}</div>
         <div style="flex-grow:1; height:1px; background:var(--border);"></div>
-        <div style="font-family:var(--fm); font-size:9px; color:var(--text-dim);">{{ items|length }}</div>
+        <div style="font-family:var(--fm); font-size: 16px; color:var(--text-dim);">{{ items|length }}</div>
       </div>
 
       <!-- Cards row -->
@@ -88,15 +88,15 @@
                     animation:fadeUp 0.4s ease;"
              onmouseover="this.style.borderColor='var(--border-ac)'; this.style.background='rgba(91,196,203,0.04)'"
              onmouseout="this.style.borderColor='{% if ev[0] == 'CRITICAL' %}rgba(192,57,43,0.25){% elif ev[0] == 'PROJECT 9' %}rgba(91,196,203,0.15){% else %}var(--border){% endif %}'; this.style.background='rgba(9,13,24,0.97)'">
-          <div style="font-family:var(--fm); font-size:8px; letter-spacing:0.2em; margin-bottom:8px;
+          <div style="font-family:var(--fm); font-size: 15px; letter-spacing:0.2em; margin-bottom:8px;
                       color:{% if ev[0] == 'CRITICAL' %}var(--danger){% elif ev[0] == 'PROJECT 9' %}var(--accent){% elif ev[0] == 'STATEMENT' %}rgba(184,134,11,0.8){% else %}var(--text-dim){% endif %};">
             {{ ev[0] }}
           </div>
-          <div style="font-family:var(--fd); font-size:13px; font-weight:700; letter-spacing:0.08em;
+          <div style="font-family:var(--fd); font-size: 16px; font-weight:700; letter-spacing:0.08em;
                       color:var(--text-bright); margin-bottom:6px; line-height:1.2;">
             {{ ev[1] }}
           </div>
-          <div style="font-family:var(--fb); font-size:11px; color:var(--text-dim); line-height:1.5;">
+          <div style="font-family:var(--fb); font-size: 14px; color:var(--text-dim); line-height:1.5;">
             {{ ev[2] }}
           </div>
         </div>
@@ -110,3 +110,4 @@
 
 </div>
 {% endblock %}
+

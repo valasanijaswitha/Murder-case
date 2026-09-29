@@ -1,0 +1,84 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+
+.rounds-grid {
+    display: grid; grid-template-columns: 1fr; gap: 20px;
+}
+.round-card {
+    padding: 24px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+}
+.rc-info {
+    display: flex; flex-direction: column; gap: 12px;
+}
+.rc-header {
+    display: flex; align-items: center; gap: 16px;
+}
+.rc-num {
+    font-family: var(--fm); font-size: 28px; font-weight: 300;
+    color: var(--accent);
+}
+.rc-name {
+    font-family: var(--fd); font-size: 28px; font-weight: 700;
+    letter-spacing: 0.1em; color: var(--text-bright);
+}
+.rc-status {
+    font-family: var(--fm); font-size: 16px; padding: 4px 8px;
+    border: 1px solid var(--border-ac); color: var(--accent); border-radius: 2px;
+}
+.rc-details {
+    display: flex; gap: 24px;
+    font-family: var(--fm); font-size: 14px; color: var(--text-dim);
+}
+.rc-detail span { color: var(--text); margin-left: 6px; }
+
+.rc-controls {
+    display: flex; flex-direction: column; gap: 10px; min-width: 200px;
+}
+.rc-btn {
+    padding: 10px; background: transparent; border: 1px solid var(--border);
+    color: var(--text-bright); font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+}
+.rc-btn:hover { border-color: var(--border-ac); color: var(--accent); background: rgba(255,255,255,0.02); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<h2 class="section-title decrypted-text" data-text="ROUND MANAGEMENT">ROUND MANAGEMENT</h2>
+
+<div class="rounds-grid animated-list">
+    {% for r in rounds %}
+    <div class="round-card glass-surface animated-list-item">
+        <div class="rc-info">
+            <div class="rc-header">
+                <div class="rc-num">0{{ r.round_number }}</div>
+                <div class="rc-name">{{ r.name }}</div>
+                <div class="rc-status">{% if r.auto_progress %}AUTO-PROGRESS ON{% else %}MANUAL ONLY{% endif %}</div>
+            </div>
+            <div class="rc-details">
+                <div class="rc-detail">TIMING: <span>{% if r.is_global %}GLOBAL SCHEDULE{% else %}PER-TEAM TIMER ({{ r.duration_minutes }}m){% endif %}</span></div>
+                <div class="rc-detail">SCHEDULED START: <span>{{ r.scheduled_start.strftime('%H:%M') if r.scheduled_start else 'IMMEDIATE' }}</span></div>
+            </div>
+        </div>
+        
+        <div class="rc-controls">
+            
+            
+            <button class="rc-btn" style="border-color:rgba(192,57,43,0.4); color:var(--danger);" onclick="alert('Locking round...')">LOCK ROUND</button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

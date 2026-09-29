@@ -1,5 +1,6 @@
 from flask import Flask, redirect, url_for
 from app.models import db
+from app.database import migrate_database
 import os
 
 def create_app():
@@ -12,6 +13,7 @@ def create_app():
     db.init_app(app)
 
     with app.app_context():
+        migrate_database(os.path.join(app.instance_path, 'murder_case.db'))
         db.create_all()
 
     from app.routes.team import team_bp

@@ -1,0 +1,135 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+/* Teams specific styles */
+.table-container {
+    background: rgba(11, 16, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 16px;
+    text-align: left;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.16em; color: var(--text-dim); text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--fb); font-size: 16px; color: var(--text-bright);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    font-family: var(--fm); font-size: 14px; border: 1px solid;
+    border-radius: 2px;
+}
+.status-badge.active { color: var(--success); border-color: rgba(39,174,96,0.4); }
+.status-badge.finished { color: var(--accent); border-color: var(--border-ac); }
+.status-badge.paused { color: var(--warn); border-color: rgba(184,134,11,0.4); }
+
+.action-btn {
+    padding: 6px 12px;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--text-dim);
+    background: transparent; border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+}
+.action-btn:hover { border-color: var(--border-ac); color: var(--accent); }
+
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <h2 class="section-title decrypted-text" style="margin-bottom:0;" data-text="TEAMS & PARTICIPANTS">TEAMS & PARTICIPANTS</h2>
+    <div style="display:flex; gap: 12px;">
+        <input type="text" placeholder="Search teams..." style="padding: 8px 12px; width: 250px;">
+        <select style="padding: 8px 12px;">
+            <option>All Statuses</option>
+            <option>ACTIVE</option>
+            <option>FINISHED</option>
+        </select>
+    </div>
+</div>
+
+<div class="table-container glass-surface animated-list">
+    <table class="animated-list-item">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Team Name</th>
+                <th>Code</th>
+                <th>Players</th>
+                <th>Round</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td style="font-family:var(--fm); color:var(--text-dim);">#{{ "%03d"|format(team.id) }}</td>
+                <td style="font-weight:600;">{{ team.team_name }}</td>
+                <td style="font-family:var(--fm); color:var(--text-dim);">{{ team.team_code }}</td>
+                <td style="font-size: 14px; color:var(--text-dim);">{{ team.player1_name }}<br>{{ team.player2_name }}</td>
+                <td style="font-family:var(--fm);">0{{ team.current_round }}</td>
+                <td style="font-family:var(--fm); font-weight:600;">{{ team.score }}</td>
+                <td><span class="status-badge {{ team.status|lower }}">{{ team.status }}</span></td>
+                <td>
+                    <button class="action-btn" onclick="teamAction({{ team.id }}, 'pause')">{% if team.status == 'PAUSED' %}RESUME{% else %}PAUSE{% endif %}</button>
+                    <button class="action-btn" onclick="forceRound({{ team.id }}, {{ team.current_round }})">ROUND</button>
+                    <button class="action-btn" onclick="teamAction({{ team.id }}, 'ghost')">+GHOST</button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align:center; padding: 40px; color:var(--text-dim);">NO TEAMS REGISTERED</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+async function teamAction(id, action) {
+  const urls = { pause: `/api/admin/team/${id}/pause`, ghost: `/api/admin/team/${id}/ghost` };
+  try {
+    await fetch(urls[action], {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    location.reload();
+  } catch(e) {}
+}
+
+async function forceRound(id, current) {
+  const next = Math.min(current + 1, 4);
+  if(!confirm(`Force team ${id} to Round ${next}?`)) return;
+  try {
+    await fetch(`/api/admin/team/${id}/round`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({round: next})
+    });
+    location.reload();
+  } catch(e) {}
+}
+</script>
+{% endblock %}
+

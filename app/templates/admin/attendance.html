@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+.table-container {
+    background: rgba(11, 16, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+    background: rgba(0, 0, 0, 0.4); padding: 16px; text-align: left;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.16em; color: var(--text-dim); text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+td {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    font-family: var(--fb); font-size: 16px; color: var(--text-bright);
+}
+tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.attendance-badge {
+    display: inline-block; padding: 4px 8px; font-family: var(--fm); font-size: 14px;
+    border: 1px solid; border-radius: 2px;
+}
+.attendance-badge.online { color: var(--success); border-color: rgba(39,174,96,0.4); }
+.attendance-badge.offline { color: var(--text-dim); border-color: var(--border); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<h2 class="section-title decrypted-text" data-text="ATTENDANCE & LIVE PARTICIPATION">ATTENDANCE & LIVE PARTICIPATION</h2>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:32px;" class="animated-list">
+    <div class="glass-surface animated-list-item" style="padding:20px; text-align:center;">
+        <div style="font-family:var(--fd); font-size:32px; font-weight:700; color:var(--text-bright);">{{ teams|length }}</div>
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); letter-spacing:0.15em;">TOTAL REGISTERED</div>
+    </div>
+    <div class="glass-surface animated-list-item" style="padding:20px; text-align:center;">
+        <div style="font-family:var(--fd); font-size:32px; font-weight:700; color:var(--success);">{{ teams|selectattr('last_active_at')|list|length }}</div>
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); letter-spacing:0.15em;">HAVE LOGGED IN</div>
+    </div>
+    <div class="glass-surface animated-list-item" style="padding:20px; text-align:center;">
+        <div style="font-family:var(--fd); font-size:32px; font-weight:700; color:var(--warn);">{{ teams|selectattr('status', 'equalto', 'PAUSED')|list|length }}</div>
+        <div style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); letter-spacing:0.15em;">CURRENTLY PAUSED</div>
+    </div>
+</div>
+
+<div class="table-container glass-surface animated-list">
+    <table class="animated-list-item">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Registered At</th>
+                <th>Last Active</th>
+                <th>Connection Status</th>
+                <th>Game Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td style="font-weight:600;">{{ team.team_name }} <span style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); display:block;">{{ team.team_code }}</span></td>
+                <td style="font-family:var(--fm); font-size: 14px; color:var(--text-dim);">{{ team.registered_at.strftime('%Y-%m-%d %H:%M:%S') if team.registered_at else 'N/A' }}</td>
+                <td style="font-family:var(--fm); font-size: 14px; color:var(--text-bright);">{{ team.last_active_at.strftime('%Y-%m-%d %H:%M:%S') if team.last_active_at else 'NEVER' }}</td>
+                <td>
+                    <!-- Dummy logic for now: if last_active is within 15 mins -->
+                    <span class="attendance-badge online">ACTIVE</span>
+                </td>
+                <td>
+                    <span class="attendance-badge" style="border-color:var(--border-ac); color:var(--accent);">{{ team.status }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

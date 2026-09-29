@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 560" role="img" aria-labelledby="title desc">
+  <title id="title">A faint apparition of Dr. Vikram Sen</title>
+  <desc id="desc">A translucent, grey-blue human apparition surrounded by soft mist.</desc>
+  <defs>
+    <linearGradient id="apparition" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d5e0e1" stop-opacity=".58"/>
+      <stop offset=".42" stop-color="#9eafb2" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#6d858a" stop-opacity=".06"/>
+    </linearGradient>
+    <radialGradient id="face" cx="50%" cy="38%" r="62%">
+      <stop offset="0" stop-color="#e3ebea" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#91a5a8" stop-opacity=".12"/>
+    </radialGradient>
+    <filter id="soften" x="-35%" y="-15%" width="170%" height="140%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+    <filter id="mist" x="-60%" y="-80%" width="220%" height="260%">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+  </defs>
+  <g fill="#b9c9ca" opacity=".12" filter="url(#mist)">
+    <ellipse cx="105" cy="490" rx="98" ry="26"/>
+    <ellipse cx="205" cy="445" rx="76" ry="20"/>
+    <ellipse cx="145" cy="285" rx="62" ry="38"/>
+  </g>
+  <g filter="url(#soften)">
+    <ellipse cx="151" cy="83" rx="35" ry="43" fill="url(#face)"/>
+    <path d="M119 120 C105 137 101 160 108 183 L83 238 C74 261 76 294 86 327 L101 378 C107 401 111 430 108 464 C125 478 171 481 196 462 C191 426 197 397 208 370 L225 327 C234 296 235 264 222 237 L195 183 C202 156 195 135 183 120 C165 132 137 132 119 120Z" fill="url(#apparition)"/>
+    <path d="M109 174 C83 188 64 217 50 251 L59 260 C82 241 103 220 121 199Z" fill="url(#apparition)" opacity=".72"/>
+    <path d="M197 174 C224 188 244 217 258 251 L249 260 C226 241 205 220 185 199Z" fill="url(#apparition)" opacity=".72"/>
+    <path d="M111 326 C91 362 77 407 69 463 L94 470 C112 431 126 394 138 350Z" fill="url(#apparition)" opacity=".72"/>
+    <path d="M190 326 C209 362 224 407 232 463 L207 470 C189 431 175 394 163 350Z" fill="url(#apparition)" opacity=".72"/>
+  </g>
+  <path d="M98 468 C126 493 177 497 207 468" fill="none" stroke="#c6d5d5" stroke-opacity=".16" stroke-width="12" filter="url(#mist)"/>
+</svg>

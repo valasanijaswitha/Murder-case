@@ -1,0 +1,117 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+
+.table-container {
+    background: rgba(11, 16, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+    background: rgba(0, 0, 0, 0.4); padding: 16px; text-align: left;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.16em; color: var(--text-dim); text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+td {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    font-family: var(--fb); font-size: 16px; color: var(--text-bright);
+}
+tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.secret-ans {
+    font-family: var(--fm); font-size: 14px;
+    color: transparent; background: var(--text-dim);
+    padding: 2px 6px; border-radius: 2px;
+    transition: all 0.2s; cursor: pointer;
+}
+.secret-ans:hover {
+    color: var(--bg); background: var(--accent);
+}
+
+.action-btn {
+    padding: 6px 12px;
+    font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--text-dim);
+    background: transparent; border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+}
+.action-btn:hover { border-color: var(--border-ac); color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<h2 class="section-title decrypted-text" data-text="PUZZLE CONTROL">PUZZLE CONTROL</h2>
+
+<div class="table-container glass-surface animated-list">
+    <table class="animated-list-item">
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Points</th>
+                <th>Answer (Hover to reveal)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in puzzles %}
+            <tr>
+                <td style="font-family:var(--fm); color:var(--text-dim);">0{{ p.round_id }}</td>
+                <td style="font-family:var(--fm); color:var(--text-dim);">{{ p.id }}</td>
+                <td style="font-weight:600;">{{ p.title }}</td>
+                <td style="font-size: 14px; color:var(--text-dim);">{{ p.type }}</td>
+                <td style="font-family:var(--fm);">{{ p.points }}</td>
+                <td><span class="secret-ans">{{ p.answer }}</span></td>
+                <td>
+                    
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h2 class="section-title decrypted-text" data-text="EVIDENCE REGISTRY">EVIDENCE REGISTRY</h2>
+
+<div class="table-container glass-surface animated-list" style="animation-delay: 0.2s;">
+    <table class="animated-list-item">
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Score Value</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in evidence %}
+            <tr>
+                <td style="font-family:var(--fm); color:var(--text-dim);">0{{ e.round }}</td>
+                <td style="font-family:var(--fm); color:var(--text-dim);">{{ e.id }}</td>
+                <td style="font-weight:600;">{{ e.name }}</td>
+                <td style="font-size: 14px; color:var(--text-dim);">{{ e.type }}</td>
+                <td style="font-family:var(--fm);">{{ e.score_value }}</td>
+                <td><span style="color:var(--success); font-family:var(--fm); font-size: 14px;">PUBLISHED</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

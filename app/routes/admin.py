@@ -27,12 +27,74 @@ def dashboard():
     return render_template('admin/dashboard.html', teams=teams, timer=timer,
                            time_str=f"{h:02d}:{m:02d}:{s:02d}")
 
+@admin_bp.route('/teams')
+def teams():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    teams = Team.query.all()
+    return render_template('admin/teams.html', teams=teams)
+
+@admin_bp.route('/attendance')
+def attendance():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    teams = Team.query.all()
+    return render_template('admin/attendance.html', teams=teams)
+
+@admin_bp.route('/event_control')
+def event_control():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    timer = GameEngine.get_timer()
+    remaining = GameEngine.get_remaining_seconds()
+    h, m, s = remaining // 3600, (remaining % 3600) // 60, remaining % 60
+    return render_template('admin/event_control.html', timer=timer, time_str=f"{h:02d}:{m:02d}:{s:02d}")
+
+@admin_bp.route('/rounds')
+def rounds():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    from app.models import RoundConfig
+    round_configs = RoundConfig.query.order_by(RoundConfig.round_number).all()
+    # Seed default configs if missing
+    if not round_configs:
+        for i, name in [(1, 'CRIME SCENE'), (2, 'DIGITAL TRAIL'), (3, 'PROJECT 9'), (4, 'DEDUCTION')]:
+            db.session.add(RoundConfig(round_number=i, name=name))
+        db.session.commit()
+        round_configs = RoundConfig.query.order_by(RoundConfig.round_number).all()
+    return render_template('admin/rounds.html', rounds=round_configs)
+
+@admin_bp.route('/puzzles')
+def puzzles():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    from app.models import Puzzle, Evidence
+    puzzles = Puzzle.query.order_by(Puzzle.round_id).all()
+    evidence = Evidence.query.order_by(Evidence.round).all()
+    return render_template('admin/puzzles.html', puzzles=puzzles, evidence=evidence)
+
+@admin_bp.route('/hints')
+def hints():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    teams = Team.query.all()
+    return render_template('admin/hints.html', teams=teams)
+
 @admin_bp.route('/leaderboard')
 def leaderboard():
     if not session.get('is_admin'):
         return redirect(url_for('admin.login'))
     teams = Team.query.order_by(Team.score.desc()).all()
     return render_template('admin/leaderboard.html', teams=teams)
+
+@admin_bp.route('/accusations')
+def accusations():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.login'))
+    from app.models import FinalAccusation
+    accs = FinalAccusation.query.order_by(FinalAccusation.submitted_at.desc()).all()
+    teams = {t.id: t.team_name for t in Team.query.all()}
+    return render_template('admin/accusations.html', accusations=accs, teams=teams)
 
 @admin_bp.route('/activity')
 def activity():

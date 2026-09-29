@@ -3,10 +3,10 @@ import json
 from datetime import datetime, timezone
 
 HINTS = {
-    'morse': [
-        "Look at the dots and dashes carefully. Each group separated by a space is one letter.",
-        "The Morse code translates to a four-letter word. Think about what object in this room you haven't checked yet.",
-        "The answer is DOOR — what does the door access log reveal?"
+    'override_code': [
+        "The letters O-M-I-T-E-V are scrambled. Rearrange them to form a single word.",
+        "It's a 6-letter word that describes the reason a person commits a crime.",
+        "Every detective looks for means, opportunity, and... The override password is MOTIVE."
     ],
     'timeline': [
         "The clocks are not synchronized. You need to account for each system's offset separately.",
@@ -31,7 +31,7 @@ HINTS = {
 }
 
 ROUND_UNLOCKS = {
-    'morse':    {'evidence': ['door_logs'], 'score': 100},
+    'override_code': {'evidence': ['door_logs'], 'score': 100},
     'timeline': {'evidence': ['cctv_corrected'], 'score': 150},
     'rohan_lie':{'evidence': ['rohan_secret', 'p9_access'], 'score': 150},
     'anika_lie':{'evidence': ['anika_override'], 'score': 150},
@@ -39,7 +39,7 @@ ROUND_UNLOCKS = {
 }
 
 PUZZLE_ANSWERS = {
-    'morse':     'DOOR',
+    'override_code': 'MOTIVE',
     'timeline':  '02:13:19',
     'rohan_lie': 'NETWORK LOGS',
     'anika_lie': 'PROJECT 9 SESSION',
@@ -47,7 +47,7 @@ PUZZLE_ANSWERS = {
 }
 
 PUZZLE_ROUND = {
-    'morse': 1, 'timeline': 1,
+    'override_code': 1, 'timeline': 1,
     'rohan_lie': 2, 'anika_lie': 2,
     'p9_motive': 3,
 }
@@ -144,10 +144,18 @@ class GameEngine:
             # Check round advancement
             round_puzzles = {k for k, v in PUZZLE_ROUND.items() if v == team.current_round}
             if round_puzzles.issubset(set(solved)):
-                team.current_round = min(team.current_round + 1, 4)
+                next_round_num = min(team.current_round + 1, 4)
+                
+                # Check RoundConfig for next round
+                from app.models import RoundConfig
+                next_rc = RoundConfig.query.filter_by(round_number=next_round_num).first()
+                if next_rc and next_rc.auto_progress:
+                    team.authorized_round = next_round_num
+                
+                team.current_round = next_round_num
                 team.score += 250  # Round complete bonus
                 db.session.commit()
-                return {"success": True, "message": "Correct! Round complete!", "round_advanced": True, "new_round": team.current_round}
+                return {"success": True, "message": "Correct! Round complete!", "round_advanced": True, "new_round": team.current_round, "authorized": team.authorized_round >= team.current_round}
 
             return {"success": True, "message": "Correct! Evidence unlocked.", "unlocked": unlock.get('evidence', [])}
         else:

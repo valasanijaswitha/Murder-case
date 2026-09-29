@@ -1,0 +1,89 @@
+{% extends "admin/base_admin.html" %}
+{% block admin_head %}
+<style>
+.section-title {
+    font-family: var(--fd); font-size: 22px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--text-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+}
+.section-title::after {
+    content: ''; flex-grow: 1; height: 1px; background: var(--border);
+}
+
+.timer-display-card {
+    text-align: center;
+    padding: 60px 40px;
+    margin-bottom: 30px;
+}
+.big-timer {
+    font-family: var(--fm); font-size: 72px; font-weight: 300;
+    letter-spacing: 0.1em; color: var(--text-bright);
+    margin-bottom: 10px; line-height: 1;
+}
+.big-timer.paused { color: var(--warn); }
+.timer-status {
+    font-family: var(--fd); font-size: 15px; letter-spacing: 0.3em;
+    text-transform: uppercase;
+}
+.timer-status.active { color: var(--success); }
+.timer-status.paused { color: var(--warn); }
+
+.control-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.ctrl-btn {
+    padding: 20px;
+    background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+    color: var(--text-bright); font-family: var(--fd); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--border-ac); }
+.ctrl-btn-primary { border-color: rgba(91, 196, 203, 0.4); color: var(--accent); }
+.ctrl-btn-primary:hover { background: var(--accent-dim); border-color: var(--accent); }
+.ctrl-btn-danger { border-color: rgba(192, 57, 43, 0.4); color: var(--danger); }
+.ctrl-btn-danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<h2 class="section-title decrypted-text" data-text="MASTER EVENT TIMER">MASTER EVENT TIMER</h2>
+
+<div class="timer-display-card glass-surface animated-list">
+    <div class="big-timer global-timer {% if timer.is_paused %}paused{% endif %} animated-list-item">{{ time_str }}</div>
+    <div class="timer-status {% if timer.is_paused %}paused{% else %}active{% endif %} animated-list-item">
+        {% if timer.is_paused %}SYSTEM PAUSED{% else %}COUNTDOWN ACTIVE{% endif %}
+    </div>
+</div>
+
+<div class="control-grid animated-list">
+    {% if timer.is_paused %}
+    <button class="ctrl-btn ctrl-btn-primary animated-list-item" onclick="adminTimer('start')">START / RESUME EVENT</button>
+    {% else %}
+    <button class="ctrl-btn ctrl-btn-danger animated-list-item" onclick="adminTimer('pause')">EMERGENCY PAUSE</button>
+    {% endif %}
+    
+    <button class="ctrl-btn animated-list-item" onclick="adminTimer('add')">ADD 5 MINUTES</button>
+    
+    
+    
+    <button class="ctrl-btn ctrl-btn-danger animated-list-item" style="grid-column: span 3;" onclick="alert('End Event coming soon')">END EVENT IMMEDIATELY</button>
+</div>
+
+<script>
+async function adminTimer(action) {
+  const urls = {
+    start: '/api/admin/timer/start',
+    pause: '/api/admin/timer/pause',
+    add:   '/api/admin/timer/add'
+  };
+  const body = action === 'add' ? JSON.stringify({seconds: 300}) : '{}';
+  try {
+    await fetch(urls[action], {method:'POST', headers:{'Content-Type':'application/json'}, body});
+    location.reload();
+  } catch(e) {}
+}
+</script>
+{% endblock %}
+

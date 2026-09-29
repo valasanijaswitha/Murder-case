@@ -39,7 +39,7 @@ def seed_database():
         db.session.bulk_save_objects([ev1, ev2, ev3, ev4, ev5, ev6, ev7, ev8, ev9])
 
         # PUZZLES
-        p1 = Puzzle(id='morse', round_id=1, title='ENCRYPTED NOTE', type='EXACT', answer='DOOR', points=100)
+        p1 = Puzzle(id='override_code', round_id=1, title='OVERRIDE CODE', type='EXACT', answer='MOTIVE', points=100)
         p2 = Puzzle(id='timeline', round_id=1, title='TIMELINE RECONSTRUCTION', type='EXACT', answer='02:13:19', points=150)
         
         p3 = Puzzle(id='rohan_lie', round_id=2, title='CONTRADICTION: ROHAN', type='EXACT', answer='NETWORK LOGS', points=150)

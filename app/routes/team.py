@@ -63,7 +63,37 @@ def dashboard():
     team = Team.query.get(session['team_id'])
     if not team:
         return redirect(url_for('team.login'))
+    if not team.story_briefing_completed:
+        return redirect(url_for('team.briefing'))
     return render_template('team/dashboard.html', team=team)
+
+@team_bp.route('/briefing')
+def briefing():
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    return render_template('team/story.html', team=team, is_briefing=True)
+
+@team_bp.route('/briefing/complete', methods=['POST'])
+def complete_briefing():
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if team:
+        team.story_briefing_completed = True
+        db.session.commit()
+    return redirect(url_for('team.dashboard'))
+
+@team_bp.route('/story')
+def story():
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    return render_template('team/story.html', team=team, is_briefing=False)
 
 @team_bp.route('/investigation')
 def investigation():
@@ -72,6 +102,14 @@ def investigation():
     team = Team.query.get(session['team_id'])
     if not team:
         return redirect(url_for('team.login'))
+    if not team.story_briefing_completed:
+        return redirect(url_for('team.briefing'))
+        
+    if getattr(team, 'authorized_round', 1) < team.current_round:
+        from app.models import RoundConfig
+        next_rc = RoundConfig.query.filter_by(round_number=team.current_round).first()
+        return render_template('team/waiting.html', team=team, rc=next_rc)
+        
     unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
     solved = team.solved_puzzles.split(',') if team.solved_puzzles else []
     return render_template('team/investigation.html', team=team, unlocked=unlocked, solved=solved)
@@ -83,6 +121,41 @@ def case_file():
     team = Team.query.get(session['team_id'])
     unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
     return render_template('team/case_file.html', team=team, unlocked=unlocked)
+
+@team_bp.route('/suspects')
+def suspects():
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
+    return render_template('team/suspects.html', team=team, unlocked=unlocked)
+
+@team_bp.route('/timeline')
+def timeline():
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    return render_template('team/timeline.html', team=team)
+
+@team_bp.route('/notes', methods=['GET', 'POST'])
+def notes():
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    if request.method == 'POST':
+        data = request.json
+        if data and 'notes' in data:
+            team.theory_notes = data['notes']
+            db.session.commit()
+            return jsonify({'status': 'ok'})
+        return jsonify({'status': 'error'})
+    return render_template('team/notes.html', team=team)
 
 @team_bp.route('/final-accusation', methods=['GET', 'POST'])
 def final_accusation():

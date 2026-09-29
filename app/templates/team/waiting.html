@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cinematic.css') }}">
+<style>
+.waiting-container {
+    height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    background: transparent;
+}
+.w-title {
+    font-family: var(--fd); font-size: 32px; font-weight: 700;
+    letter-spacing: 0.2em; color: var(--success); margin-bottom: 12px;
+}
+.w-subtitle {
+    font-family: var(--fm); font-size: 14px; color: var(--text-dim);
+    letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 40px;
+}
+.w-card {
+    padding: 40px; max-width: 500px; width: 100%;
+}
+.w-desc {
+    font-family: var(--fb); font-size: 14px; line-height: 1.6;
+    color: var(--text-bright); margin-bottom: 24px;
+}
+.w-timer {
+    font-family: var(--fm); font-size: 24px; color: var(--accent);
+    margin-bottom: 30px;
+}
+.spinner {
+    width: 40px; height: 40px; margin: 0 auto;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="waiting-container">
+    <div class="w-title glitch-text" data-text="ROUND COMPLETED">ROUND COMPLETED</div>
+    <div class="w-subtitle">PREVIOUS ROUND OBJECTIVES MET</div>
+    
+    <div class="glass-surface w-card animated-list">
+        <div class="animated-list-item w-desc">
+            Your team has successfully submitted all deductions for this phase. 
+            The next phase, <strong>{{ rc.name if rc else 'Unknown' }}</strong>, is currently locked by central command.
+        </div>
+        
+        <div class="animated-list-item w-timer">
+            {% if rc and rc.scheduled_start %}
+                SCHEDULED RELEASE: {{ rc.scheduled_start.strftime('%H:%M') }}
+            {% else %}
+                AWAITING ADMINISTRATOR AUTHORIZATION
+            {% endif %}
+        </div>
+        
+        <div class="animated-list-item spinner"></div>
+        <div class="animated-list-item" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); margin-top:20px;">
+            POLLING SYSTEM... DO NOT REFRESH
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/cinematic.js') }}"></script>
+<script>
+// Poll for state changes
+setInterval(async () => {
+    try {
+        const r = await fetch('/api/team/state');
+        const d = await r.json();
+        if(d.authorized_round >= d.current_round) {
+            window.location = '{{ url_for("team.investigation") }}';
+        }
+    } catch(e) {}
+}, 5000);
+</script>
+{% endblock %}
+
