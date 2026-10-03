@@ -143,6 +143,16 @@ def admin_end_round(round_number):
         db.session.commit()
     return jsonify({"ok": True})
 
+@api_bp.route('/admin/round/<int:round_number>/reset', methods=['POST'])
+@admin_required
+def admin_reset_round(round_number):
+    rc = GameEngine.get_round_config(round_number)
+    if rc:
+        rc.status = 'LOCKED'
+        rc.started_at = None
+        db.session.commit()
+    return jsonify({"ok": True})
+
 @api_bp.route('/admin/clear_test_participants', methods=['POST'])
 @admin_required
 def admin_clear_test_participants():
