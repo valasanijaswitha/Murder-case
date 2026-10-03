@@ -1,4 +1,4 @@
-from app.models import db, Team, ActivityLog, EventTimer
+from app.models import db, Team, ActivityLog
 import json
 from datetime import datetime, timezone
 
@@ -64,47 +64,33 @@ class GameEngine:
         db.session.add(log)
 
     @staticmethod
-    def get_timer():
-        timer = EventTimer.query.first()
-        if not timer:
-            timer = EventTimer()
-            db.session.add(timer)
-            db.session.commit()
-        return timer
+    def get_round_config(round_number):
+        from app.models import RoundConfig
+        return RoundConfig.query.filter_by(round_number=round_number).first()
 
     @staticmethod
-    def get_remaining_seconds():
-        timer = GameEngine.get_timer()
-        if timer.is_paused:
-            return timer.paused_remaining
-        elapsed = (datetime.now(timezone.utc) - timer.event_start.replace(tzinfo=timezone.utc)).total_seconds()
-        remaining = timer.event_duration - int(elapsed)
+    def get_round_remaining_seconds(round_number):
+        rc = GameEngine.get_round_config(round_number)
+        if not rc:
+            return 0
+        duration_sec = (rc.duration_minutes or 30) * 60
+        if rc.status == 'COMPLETED':
+            return 0
+        if rc.status in ('LOCKED', 'UNLOCKED') or not rc.started_at:
+            return duration_sec
+        elapsed = (datetime.now(timezone.utc) - rc.started_at.replace(tzinfo=timezone.utc)).total_seconds()
+        remaining = duration_sec - int(elapsed)
         return max(0, remaining)
 
     @staticmethod
-    def start_timer():
-        timer = GameEngine.get_timer()
-        timer.is_paused = False
-        timer.event_start = datetime.now(timezone.utc)
-        timer.event_duration = timer.paused_remaining
-        db.session.commit()
-
-    @staticmethod
-    def pause_timer():
-        timer = GameEngine.get_timer()
-        if not timer.is_paused:
-            timer.paused_remaining = GameEngine.get_remaining_seconds()
-            timer.is_paused = True
-            db.session.commit()
-
-    @staticmethod
-    def add_time(seconds):
-        timer = GameEngine.get_timer()
-        if timer.is_paused:
-            timer.paused_remaining += seconds
-        else:
-            timer.event_duration += seconds
-        db.session.commit()
+    def check_round_expired(round_number):
+        rc = GameEngine.get_round_config(round_number)
+        if rc and rc.status == 'RUNNING':
+            if GameEngine.get_round_remaining_seconds(round_number) <= 0:
+                rc.status = 'COMPLETED'
+                db.session.commit()
+                return True
+        return False
 
     @staticmethod
     def validate_submission(team_id, puzzle_id, submitted_answer):
@@ -118,6 +104,12 @@ class GameEngine:
 
         if team.current_round < required_round:
             return {"success": False, "error": "Puzzle not yet unlocked"}
+
+        # Check global round state — must be RUNNING
+        GameEngine.check_round_expired(team.current_round)
+        rc = GameEngine.get_round_config(team.current_round)
+        if not rc or rc.status != 'RUNNING':
+            return {"success": False, "error": f"Round is not active (status: {rc.status if rc else 'LOCKED'}). Submissions blocked."}
 
         solved = team.solved_puzzles.split(',') if team.solved_puzzles else []
         if puzzle_id in solved:
@@ -144,18 +136,10 @@ class GameEngine:
             # Check round advancement
             round_puzzles = {k for k, v in PUZZLE_ROUND.items() if v == team.current_round}
             if round_puzzles.issubset(set(solved)):
-                next_round_num = min(team.current_round + 1, 4)
-                
-                # Check RoundConfig for next round
-                from app.models import RoundConfig
-                next_rc = RoundConfig.query.filter_by(round_number=next_round_num).first()
-                if next_rc and next_rc.auto_progress:
-                    team.authorized_round = next_round_num
-                
-                team.current_round = next_round_num
+                team.round_completed = True
                 team.score += 250  # Round complete bonus
                 db.session.commit()
-                return {"success": True, "message": "Correct! Round complete!", "round_advanced": True, "new_round": team.current_round, "authorized": team.authorized_round >= team.current_round}
+                return {"success": True, "message": "Correct! Round complete!", "round_completed": True, "current_round": team.current_round}
 
             return {"success": True, "message": "Correct! Evidence unlocked.", "unlocked": unlock.get('evidence', [])}
         else:

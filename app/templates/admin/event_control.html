@@ -10,80 +10,218 @@
     content: ''; flex-grow: 1; height: 1px; background: var(--border);
 }
 
-.timer-display-card {
-    text-align: center;
-    padding: 60px 40px;
-    margin-bottom: 30px;
+.rounds-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px; margin-bottom: 40px;
 }
-.big-timer {
-    font-family: var(--fm); font-size: 72px; font-weight: 300;
+.round-card {
+    padding: 24px; border: 1px solid var(--border);
+    background: rgba(11,16,28,0.85);
+    display: flex; flex-direction: column; gap: 14px;
+}
+.round-card.status-running {
+    border-color: rgba(39,174,96,0.5);
+    box-shadow: 0 0 14px rgba(39,174,96,0.06);
+}
+.round-card.status-completed {
+    border-color: rgba(91,196,203,0.3);
+    opacity: 0.7;
+}
+
+.rnd-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.rnd-num {
+    font-family: var(--fd); font-size: 28px; font-weight: 700;
     letter-spacing: 0.1em; color: var(--text-bright);
-    margin-bottom: 10px; line-height: 1;
 }
-.big-timer.paused { color: var(--warn); }
-.timer-status {
-    font-family: var(--fd); font-size: 15px; letter-spacing: 0.3em;
-    text-transform: uppercase;
+.rnd-name {
+    font-family: var(--fm); font-size: 12px; letter-spacing: 0.2em;
+    color: var(--text-dim); margin-top: 2px;
 }
-.timer-status.active { color: var(--success); }
-.timer-status.paused { color: var(--warn); }
+.rnd-badge {
+    font-family: var(--fm); font-size: 13px; letter-spacing: 0.18em;
+    padding: 4px 10px; border: 1px solid; border-radius: 2px;
+}
+.badge-locked   { color: var(--danger);  border-color: rgba(192,57,43,0.4); }
+.badge-unlocked { color: var(--warn, #b8860b); border-color: rgba(184,134,11,0.5); }
+.badge-running  { color: var(--success); border-color: rgba(39,174,96,0.5); }
+.badge-completed{ color: var(--accent);  border-color: rgba(91,196,203,0.4); }
 
-.control-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+.rnd-timer {
+    font-family: var(--fm); font-size: 32px; text-align: center;
+    letter-spacing: 0.08em; color: var(--text-bright);
+    padding: 8px 0;
 }
-.ctrl-btn {
-    padding: 20px;
-    background: rgba(0,0,0,0.4); border: 1px solid var(--border);
-    color: var(--text-bright); font-family: var(--fd); font-size: 14px; font-weight: 600;
-    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
-    transition: all 0.2s;
-}
-.ctrl-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--border-ac); }
-.ctrl-btn-primary { border-color: rgba(91, 196, 203, 0.4); color: var(--accent); }
-.ctrl-btn-primary:hover { background: var(--accent-dim); border-color: var(--accent); }
-.ctrl-btn-danger { border-color: rgba(192, 57, 43, 0.4); color: var(--danger); }
-.ctrl-btn-danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+.rnd-timer.urgent { color: var(--danger); animation: pulseSubtle 1.5s infinite; }
 
+.rnd-controls { display: flex; flex-direction: column; gap: 8px; }
+.rnd-btn {
+    padding: 11px; width: 100%;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border);
+    color: var(--text-bright); font-family: var(--fd); font-size: 13px;
+    font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.18s;
+}
+.rnd-btn:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
+.rnd-btn:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
+.rnd-btn-unlock { border-color: rgba(184,134,11,0.45); color: #c8a535; }
+.rnd-btn-unlock:hover:not(:disabled) { background: rgba(184,134,11,0.1); border-color: #c8a535; }
+.rnd-btn-start  { border-color: rgba(39,174,96,0.45);  color: var(--success); }
+.rnd-btn-start:hover:not(:disabled)  { background: rgba(39,174,96,0.12); border-color: var(--success); }
+.rnd-btn-end    { border-color: rgba(192,57,43,0.45);  color: var(--danger); }
+.rnd-btn-end:hover:not(:disabled)    { background: rgba(192,57,43,0.1); border-color: var(--danger); }
+
+/* Clear Participants Section */
+.danger-zone {
+    margin-top: 20px; padding: 28px;
+    border: 1px solid rgba(192,57,43,0.3);
+    background: rgba(192,57,43,0.04);
+}
+.dz-title {
+    font-family: var(--fd); font-size: 16px; font-weight: 600;
+    letter-spacing: 0.2em; color: var(--danger); margin-bottom: 10px;
+}
+.dz-desc {
+    font-family: var(--fb); font-size: 14px; color: var(--text-dim);
+    line-height: 1.6; margin-bottom: 18px;
+}
+.confirm-area { display: none; margin-top: 14px; }
+.confirm-area.shown { display: block; }
+.confirm-msg {
+    font-family: var(--fm); font-size: 14px; color: var(--warn, #c8a535);
+    letter-spacing: 0.12em; margin-bottom: 12px; line-height: 1.6;
+}
+.confirm-btns { display: flex; gap: 10px; }
 </style>
 {% endblock %}
 
 {% block admin_content %}
-<h2 class="section-title decrypted-text" data-text="MASTER EVENT TIMER">MASTER EVENT TIMER</h2>
+<h2 class="section-title decrypted-text" data-text="ROUND CONTROL CENTRE">ROUND CONTROL CENTRE</h2>
 
-<div class="timer-display-card glass-surface animated-list">
-    <div class="big-timer global-timer {% if timer.is_paused %}paused{% endif %} animated-list-item">{{ time_str }}</div>
-    <div class="timer-status {% if timer.is_paused %}paused{% else %}active{% endif %} animated-list-item">
-        {% if timer.is_paused %}SYSTEM PAUSED{% else %}COUNTDOWN ACTIVE{% endif %}
+<div class="rounds-grid animated-list">
+  {% for r in rounds %}
+  {% set status = r.status %}
+  {% set timer_str = timers.get(r.round_number, '--:--:--') %}
+  {% set remaining = namespace(secs=0) %}
+
+  <div class="round-card status-{{ status|lower }} animated-list-item">
+    <div class="rnd-header">
+      <div>
+        <div class="rnd-num">ROUND {{ r.round_number }}</div>
+        <div class="rnd-name">{{ r.name }}</div>
+      </div>
+      <div class="rnd-badge badge-{{ status|lower }}">{{ status }}</div>
+    </div>
+
+    <div class="rnd-timer {% if status == 'RUNNING' and timer_str < '00:10:00' %}urgent{% endif %}">
+      {% if status == 'RUNNING' %}{{ timer_str }}
+      {% elif status == 'COMPLETED' %}COMPLETED
+      {% else %}{{ r.duration_minutes }}:00 MIN
+      {% endif %}
+    </div>
+
+    <div class="rnd-controls">
+      <button class="rnd-btn rnd-btn-unlock"
+              onclick="roundControl({{ r.round_number }}, 'unlock')"
+              {% if status != 'LOCKED' %}disabled{% endif %}>
+        🔓 UNLOCK ROUND {{ r.round_number }}
+      </button>
+      <button class="rnd-btn rnd-btn-start"
+              onclick="roundControl({{ r.round_number }}, 'start')"
+              {% if status != 'UNLOCKED' %}disabled{% endif %}>
+        ▶ START ROUND {{ r.round_number }}
+      </button>
+      <button class="rnd-btn rnd-btn-end"
+              onclick="roundControl({{ r.round_number }}, 'end')"
+              {% if status != 'RUNNING' %}disabled{% endif %}>
+        ⏹ END ROUND {{ r.round_number }}
+      </button>
+    </div>
+  </div>
+  {% else %}
+  <div class="animated-list-item" style="color:var(--text-dim); padding:20px;">
+    No rounds configured. They will be seeded automatically.
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="section-title" style="margin-top:20px;">DANGER ZONE</h2>
+<div class="danger-zone animated-list">
+    <div class="dz-title">⚠ CLEAR TEST PARTICIPANTS</div>
+    <div class="dz-desc">
+        Removes all registered team/participant records and their activity logs.<br>
+        <strong>Game content (puzzles, evidence, suspects, story) is NOT affected.</strong><br>
+        Use this before the actual event to start with a clean participant list.
+    </div>
+    <button class="rnd-btn rnd-btn-end" style="max-width:300px;"
+            onclick="document.getElementById('confirm-area').classList.add('shown')">
+        CLEAR TEST PARTICIPANTS
+    </button>
+    <div class="confirm-area" id="confirm-area">
+        <div class="confirm-msg">
+            ⚠ This will permanently delete all team registrations, activity logs, and final accusations.<br>
+            Game content and round configurations will remain intact.<br>
+            This cannot be undone.
+        </div>
+        <div class="confirm-btns">
+            <button class="rnd-btn" style="flex:1;" onclick="document.getElementById('confirm-area').classList.remove('shown')">
+                CANCEL
+            </button>
+            <button class="rnd-btn rnd-btn-end" style="flex:1;" onclick="clearParticipants()">
+                CONFIRM — CLEAR PARTICIPANTS
+            </button>
+        </div>
     </div>
 </div>
 
-<div class="control-grid animated-list">
-    {% if timer.is_paused %}
-    <button class="ctrl-btn ctrl-btn-primary animated-list-item" onclick="adminTimer('start')">START / RESUME EVENT</button>
-    {% else %}
-    <button class="ctrl-btn ctrl-btn-danger animated-list-item" onclick="adminTimer('pause')">EMERGENCY PAUSE</button>
-    {% endif %}
-    
-    <button class="ctrl-btn animated-list-item" onclick="adminTimer('add')">ADD 5 MINUTES</button>
-    
-    
-    
-    <button class="ctrl-btn ctrl-btn-danger animated-list-item" style="grid-column: span 3;" onclick="alert('End Event coming soon')">END EVENT IMMEDIATELY</button>
-</div>
-
 <script>
-async function adminTimer(action) {
-  const urls = {
-    start: '/api/admin/timer/start',
-    pause: '/api/admin/timer/pause',
-    add:   '/api/admin/timer/add'
-  };
-  const body = action === 'add' ? JSON.stringify({seconds: 300}) : '{}';
-  try {
-    await fetch(urls[action], {method:'POST', headers:{'Content-Type':'application/json'}, body});
-    location.reload();
-  } catch(e) {}
+async function roundControl(roundNumber, action) {
+    const url = `/api/admin/round/${roundNumber}/${action}`;
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        });
+        const d = await resp.json();
+        if(d.ok) {
+            location.reload();
+        } else {
+            alert('Action failed: ' + JSON.stringify(d));
+        }
+    } catch(e) {
+        alert('Network error: ' + e);
+    }
 }
+
+async function clearParticipants() {
+    try {
+        const resp = await fetch('/api/admin/clear_test_participants', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        });
+        const d = await resp.json();
+        if(d.ok) {
+            alert('✓ All participant records cleared. Game content is intact.');
+            location.reload();
+        } else {
+            alert('Failed: ' + JSON.stringify(d));
+        }
+    } catch(e) {
+        alert('Network error: ' + e);
+    }
+}
+
+// Auto-refresh running rounds every 30s to update timers
+{% if rounds %}
+{% for r in rounds %}
+{% if r.status == 'RUNNING' %}
+setTimeout(() => location.reload(), 30000);
+{% endif %}
+{% endfor %}
+{% endif %}
 </script>
 {% endblock %}
-

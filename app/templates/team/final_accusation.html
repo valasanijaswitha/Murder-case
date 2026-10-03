@@ -315,6 +315,7 @@ async function submitAccusation() {
     });
     const d = await r.json();
     if (d.success) {
+      sessionStorage.removeItem('bgAudioPlaying');
       window.location = '{{ url_for("team.reveal") }}';
     } else {
       errEl.textContent = 'Submission error. Please try again.';

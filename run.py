@@ -2,24 +2,45 @@ from flask import Flask, redirect, url_for
 from app.models import db
 from app.database import migrate_database
 import os
-import tempfile
 
 def create_app():
     app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(32)
-    database_path = os.path.join(app.instance_path, 'murder_case.db')
-    if os.environ.get('VERCEL') == '1':
-        database_path = os.path.join(tempfile.gettempdir(), 'murder_case.db')
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + database_path.replace('\\', '/')
-    else:
+    database_url = os.environ.get('DATABASE_URL')
+    is_vercel = os.environ.get('VERCEL') == '1' or 'VERCEL_ENV' in os.environ or 'AWS_EXECUTION_ENV' in os.environ or bool(database_url and not database_url.startswith('sqlite'))
+    secret_key = os.environ.get('SECRET_KEY')
+
+    if is_vercel and not secret_key:
+        raise RuntimeError('SECRET_KEY must be configured in the deployment environment. Do not use random keys.')
+    if is_vercel and not os.environ.get('ADMIN_PASSWORD'):
+        raise RuntimeError('ADMIN_PASSWORD must be configured in the deployment environment.')
+    if is_vercel and not database_url:
+        raise RuntimeError('DATABASE_URL must point to persistent PostgreSQL storage.')
+
+    app.config['SECRET_KEY'] = secret_key or os.urandom(32)
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = is_vercel
+    database_path = None
+    if database_url:
+        if database_url.startswith('postgres://'):
+            database_url = 'postgresql://' + database_url[len('postgres://'):]
+        if database_url.startswith('postgresql://'):
+            database_url = 'postgresql+psycopg://' + database_url[len('postgresql://'):]
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    elif not is_vercel:
+        database_path = os.path.join(app.instance_path, 'murder_case.db')
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///murder_case.db'
+    else:
+        raise RuntimeError('Vercel deployments must use persistent PostgreSQL storage.')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_pre_ping': True}
     app.config['SESSION_PERMANENT'] = True
 
     db.init_app(app)
 
     with app.app_context():
-        migrate_database(database_path)
+        if database_path:
+            migrate_database(database_path)
         db.create_all()
 
     from app.routes.team import team_bp

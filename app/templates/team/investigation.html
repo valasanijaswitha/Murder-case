@@ -203,7 +203,7 @@
 }
 .dt-panel {
   position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center; padding: 40px;
+  display: flex; align-items: center; justify-content: center; padding: 120px 40px 100px 40px;
 }
 .dt-inner {
   width: 100%; max-width: 700px;
@@ -241,7 +241,7 @@
 }
 .p9-panel {
   position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; padding: 120px 40px 100px 40px;
 }
 .p9-inner { text-align: center; }
 .p9-title {
@@ -280,7 +280,7 @@
 }
 .r4-panel {
   position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center; padding: 40px;
+  display: flex; align-items: center; justify-content: center; padding: 120px 40px 100px 40px;
 }
 .r4-inner { max-width: 500px; width: 100%; text-align: center; }
 .r4-title {
@@ -1801,19 +1801,27 @@ async function doSubmit(puzzleId, answer) {
       showResult(puzzleId, '✓ Already solved — evidence unlocked.', true);
       return;
     }
+    if(!d.success && d.error && d.error.includes('not active')) {
+      showResult(puzzleId, '⚠ ' + d.error, false);
+      return;
+    }
     if(d.success) {
       showResult(puzzleId, '✓ ' + d.message, true);
       // Update score
       document.getElementById('score-display').textContent = parseInt(document.getElementById('score-display').textContent) + (d.score_add || 100);
       // Show evidence notification
       showEvidenceNotification('Evidence unlocked — check the panel');
-      if(d.round_advanced) {
-        setTimeout(() => { showRoundTransition(d.new_round); }, 1400); 
+      if(d.round_completed) {
+        // Round finished — reload to show the round complete screen (no auto-redirect)
+        const overlay = document.getElementById('round-transition');
+        document.getElementById('rt-text').textContent = 'ROUND ' + d.current_round + ' COMPLETE';
+        overlay.style.display = 'flex';
+        setTimeout(() => { location.reload(); }, 2200);
       } else {
         setTimeout(() => { location.reload(); }, 2200);
       }
     } else {
-      const errMsg = `DEDUCTION INCONSISTENT — ${d.message || 'Your conclusion does not match the available evidence.'}`;
+      const errMsg = `DEDUCTION INCONSISTENT — ${d.message || d.error || 'Your conclusion does not match the available evidence.'}`;
       showResult(puzzleId, errMsg, false);
       // Deduct score display
       const sc = document.getElementById('score-display');

@@ -31,6 +31,8 @@ def register():
         )
         db.session.add(new_team)
         db.session.commit()
+        session['team_id'] = new_team.id
+        session.permanent = True
         GameEngine.log(new_team.id, 'REGISTERED')
         db.session.commit()
         return render_template('team/register_success.html', team_code=team_code, team=new_team)
@@ -43,6 +45,7 @@ def login():
         password = request.form.get('password', '').strip()
         team = Team.query.filter_by(team_code=team_code).first()
         if team and check_password_hash(team.password_hash, password):
+            session.pop('team_portal_entered', None)
             session['team_id'] = team.id
             session.permanent = True
             GameEngine.log(team.id, 'LOGIN')
@@ -54,6 +57,7 @@ def login():
 @team_bp.route('/logout')
 def logout():
     session.pop('team_id', None)
+    session.pop('team_portal_entered', None)
     return redirect(url_for('team.login'))
 
 @team_bp.route('/dashboard')
@@ -65,6 +69,7 @@ def dashboard():
         return redirect(url_for('team.login'))
     if not team.story_briefing_completed:
         return redirect(url_for('team.briefing'))
+    session['team_portal_entered'] = team.id
     return render_template('team/dashboard.html', team=team)
 
 @team_bp.route('/briefing')
@@ -102,14 +107,27 @@ def investigation():
     team = Team.query.get(session['team_id'])
     if not team:
         return redirect(url_for('team.login'))
-    if not team.story_briefing_completed:
+    if not team.story_briefing_completed and session.get('team_portal_entered') != team.id:
         return redirect(url_for('team.briefing'))
         
-    if getattr(team, 'authorized_round', 1) < team.current_round:
-        from app.models import RoundConfig
-        next_rc = RoundConfig.query.filter_by(round_number=team.current_round).first()
-        return render_template('team/waiting.html', team=team, rc=next_rc)
+    from app.models import RoundConfig
+    rc = RoundConfig.query.filter_by(round_number=team.current_round).first()
+    
+    if team.round_completed or (rc and rc.status == 'COMPLETED'):
+        return render_template('team/round_complete.html', team=team, round_number=team.current_round)
+
+    if not rc or rc.status == 'LOCKED':
+        return render_template('team/waiting.html', team=team, rc=rc, status='LOCKED')
         
+    if rc.status == 'UNLOCKED':
+        return render_template('team/waiting.html', team=team, rc=rc, status='UNLOCKED')
+        
+    # rc.status == 'RUNNING'
+    GameEngine.check_round_expired(team.current_round)
+    rc = RoundConfig.query.filter_by(round_number=team.current_round).first()
+    if rc.status == 'COMPLETED':
+        return render_template('team/round_complete.html', team=team, round_number=team.current_round)
+
     unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
     solved = team.solved_puzzles.split(',') if team.solved_puzzles else []
     return render_template('team/investigation.html', team=team, unlocked=unlocked, solved=solved)
@@ -170,3 +188,31 @@ def reveal():
         return redirect(url_for('team.login'))
     team = Team.query.get(session['team_id'])
     return render_template('team/reveal.html', team=team)
+
+@team_bp.route('/proceed/<int:next_round>', methods=['POST'])
+def proceed_to_round(next_round):
+    """Player clicks PROCEED after completing a round. Server checks global state."""
+    if 'team_id' not in session:
+        return redirect(url_for('team.login'))
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+
+    from app.models import RoundConfig
+    rc = RoundConfig.query.filter_by(round_number=next_round).first()
+
+    if not rc or rc.status == 'LOCKED':
+        # Round not yet available
+        return render_template('team/waiting.html', team=team, rc=rc, status='LOCKED',
+                               message=f'ROUND {next_round} IS NOT YET AVAILABLE. PLEASE WAIT FOR THE GAME MASTER.')
+
+    # Advance team to the next round (they've already completed current)
+    if team.round_completed and team.current_round < next_round:
+        team.current_round = next_round
+        team.round_completed = False
+        team.authorized_round = next_round
+        db.session.commit()
+        GameEngine.log(team.id, 'PROCEED_TO_ROUND', 'ROUND', str(next_round))
+        db.session.commit()
+
+    return redirect(url_for('team.investigation'))

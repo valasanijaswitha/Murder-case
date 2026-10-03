@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cinematic.css') }}">
+<style>
+.rc-container {
+    height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    background: transparent;
+}
+.rc-title {
+    font-family: var(--fd); font-size: 38px; font-weight: 700;
+    letter-spacing: 0.28em; color: var(--success); margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(39,174,96,0.4);
+}
+.rc-subtitle {
+    font-family: var(--fm); font-size: 14px; color: var(--text-dim);
+    letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 40px;
+}
+.rc-card {
+    padding: 44px 48px; max-width: 540px; width: 100%;
+}
+.rc-message {
+    font-family: var(--fb); font-size: 15px; line-height: 1.7;
+    color: var(--text-bright); margin-bottom: 32px;
+}
+.rc-score-note {
+    font-family: var(--fm); font-size: 13px; color: var(--accent);
+    letter-spacing: 0.18em; margin-bottom: 32px;
+}
+.proceed-btn {
+    display: inline-block;
+    padding: 14px 36px;
+    background: rgba(39,174,96,0.08);
+    border: 1px solid rgba(39,174,96,0.45);
+    color: var(--success);
+    font-family: var(--fd); font-size: 14px;
+    font-weight: 600; letter-spacing: 0.22em;
+    text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+    width: 100%;
+}
+.proceed-btn:hover {
+    background: rgba(39,174,96,0.18);
+    border-color: var(--success);
+}
+.proceed-btn:disabled {
+    opacity: 0.4; cursor: not-allowed;
+}
+.rc-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 24px 0;
+}
+.rc-wait-msg {
+    font-family: var(--fm); font-size: 13px;
+    color: var(--text-dim); letter-spacing: 0.12em;
+    margin-top: 14px; display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rc-container">
+    <div class="rc-title glitch-text" data-text="ROUND {{ round_number }} COMPLETE">ROUND {{ round_number }} COMPLETE</div>
+    <div class="rc-subtitle">PHASE OBJECTIVES ACHIEVED — CASE 09: THE SILENT SIGNAL</div>
+
+    <div class="glass-surface rc-card animated-list">
+        <div class="animated-list-item rc-message">
+            Your team has successfully completed all objectives for this phase.<br><br>
+            <strong>+250 ROUND COMPLETION BONUS AWARDED.</strong><br><br>
+            When you are ready, proceed to the next phase. The Game Master controls when each phase begins.
+        </div>
+
+        <div class="animated-list-item rc-score-note">
+            ◈ CURRENT SCORE: {{ team.score }} &nbsp;|&nbsp; GHOST POINTS: {{ team.ghost_points }}
+        </div>
+
+        <hr class="rc-divider animated-list-item">
+
+        {% if round_number < 4 %}
+        {% set next_round = round_number + 1 %}
+        <form method="POST" action="{{ url_for('team.proceed_to_round', next_round=next_round) }}" class="animated-list-item">
+            <button type="submit" class="proceed-btn">
+                ▶ PROCEED TO ROUND {{ next_round }}
+            </button>
+        </form>
+        <div class="rc-wait-msg" id="wait-msg">
+            ⏳ ROUND {{ next_round }} IS NOT YET AVAILABLE. WAIT FOR THE GAME MASTER.
+        </div>
+        {% else %}
+        <a href="{{ url_for('team.final_accusation') }}" class="proceed-btn" style="text-decoration:none; display:block;">
+            ▶ SUBMIT FINAL ACCUSATION
+        </a>
+        {% endif %}
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/cinematic.js') }}"></script>
+{% endblock %}

@@ -17,6 +17,7 @@ class Team(db.Model):
     player2_name = db.Column(db.String(80), nullable=False)
     current_round = db.Column(db.Integer, default=1)
     authorized_round = db.Column(db.Integer, default=1)
+    round_completed = db.Column(db.Boolean, default=False)
     score = db.Column(db.Integer, default=0)
     ghost_points = db.Column(db.Integer, default=5)
     status = db.Column(db.String(20), default='ACTIVE')
@@ -71,10 +72,12 @@ class RoundConfig(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     round_number = db.Column(db.Integer, unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), default='LOCKED') # LOCKED, UNLOCKED, RUNNING, COMPLETED
+    started_at = db.Column(db.DateTime, nullable=True)
     is_global = db.Column(db.Boolean, default=True) # If true, it uses global scheduled times. If false, it uses per-team duration
     scheduled_start = db.Column(db.DateTime, nullable=True)
     scheduled_end = db.Column(db.DateTime, nullable=True)
-    duration_minutes = db.Column(db.Integer, nullable=True) # Used if is_global is False
+    duration_minutes = db.Column(db.Integer, default=30)
     auto_progress = db.Column(db.Boolean, default=True) # Whether teams auto-progress after solving
 
 class Announcement(db.Model):

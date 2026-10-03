@@ -98,6 +98,21 @@
     </div>
 </div>
 
+<h2 class="section-title" style="color:var(--text-bright); margin-bottom:16px;">ROUND STATUS</h2>
+<div style="display:flex; gap:16px; margin-bottom:32px; flex-wrap:wrap;">
+    {% for r in rounds %}
+    {% set color = {'LOCKED': 'var(--danger)', 'UNLOCKED': '#c8a535', 'RUNNING': 'var(--success)', 'COMPLETED': 'var(--accent)'}[r.status] %}
+    <div class="glass-surface" style="padding:16px 22px; border: 1px solid {{ color }}22; flex: 1; min-width: 150px; text-align:center;">
+        <div style="font-family:var(--fm); font-size:13px; color:var(--text-dim); letter-spacing:0.18em; margin-bottom:6px;">ROUND {{ r.round_number }}</div>
+        <div style="font-family:var(--fd); font-size:13px; font-weight:600; color: {{ color }}; letter-spacing:0.15em;">{{ r.status }}</div>
+        <div style="font-family:var(--fm); font-size:11px; color:var(--text-dim); margin-top:4px;">{{ r.name }}</div>
+    </div>
+    {% else %}
+    <div style="color:var(--text-dim); padding:12px;">No round configs found.</div>
+    {% endfor %}
+    <a href="{{ url_for('admin.event_control') }}" style="display:flex; align-items:center; padding:16px 22px; font-family:var(--fd); font-size:13px; letter-spacing:0.14em; color:var(--accent); border:1px solid rgba(91,196,203,0.3); text-decoration:none;">⚙ MANAGE ROUNDS</a>
+</div>
+
 <h2 class="section-title decrypted-text" data-text="ACTIVE TEAMS">ACTIVE TEAMS</h2>
 
 <div class="teams-grid animated-list">
@@ -106,7 +121,7 @@
         <div class="tc-header">
             <div>
                 <div class="tc-name">{{ team.team_name }}</div>
-                <div class="tc-code">{{ team.team_code }}</div>
+                <div class="tc-code">{{ team.team_code }} | {{ team.player1_name }} & {{ team.player2_name }}</div>
             </div>
             <div class="tc-status {{ team.status|lower }}">{{ team.status }}</div>
         </div>
@@ -126,6 +141,8 @@
             </div>
         </div>
     </div>
+    {% else %}
+    <div style="color:var(--text-dim); padding: 20px; grid-column: 1/-1;">No teams registered yet.</div>
     {% endfor %}
 </div>
 {% endblock %}

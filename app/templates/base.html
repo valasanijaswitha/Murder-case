@@ -268,6 +268,7 @@ input::placeholder, textarea::placeholder {
 }
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/cinematic.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/polish.css') }}">
 {% block head %}{% endblock %}
 </head>
 <body>
@@ -277,54 +278,137 @@ input::placeholder, textarea::placeholder {
 {% block content %}{% endblock %}
 <script src="{{ url_for('static', filename='js/cinematic.js') }}"></script>
 <script>
+// SERVER-AUTHORITATIVE ROUND TIMER
+// The server tracks round_started_at + round_duration. We only display, never compute the deadline.
 let serverRemaining = 0;
-let isPaused = false;
-let localInterval = null;
+let roundStatus = 'LOCKED';
+let lastSyncTime = Date.now();
 
 async function syncTimer() {
   try {
     const r = await fetch('/api/timer');
+    if (!r.ok) return; // Not authenticated or no team — silent fail
     const d = await r.json();
-    serverRemaining = d.remaining;
-    isPaused = d.is_paused || false;
-    updateTimerDisplay(serverRemaining);
+    if (d.error) return;
+    serverRemaining = d.remaining || 0;
+    roundStatus = d.status || 'LOCKED';
+    lastSyncTime = Date.now();
+    updateTimerDisplay();
   } catch(e) {}
 }
 
-function updateTimerDisplay(remaining) {
-    if (remaining < 0) remaining = 0;
-    const h = Math.floor(remaining / 3600);
-    const m = Math.floor((remaining % 3600) / 60);
-    const s = remaining % 60;
-    const formatted = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    
+function updateTimerDisplay() {
+    // Calculate display remaining based on elapsed time since last server sync
+    const elapsed = Math.floor((Date.now() - lastSyncTime) / 1000);
+    const displayRemaining = Math.max(0, serverRemaining - elapsed);
+
     document.querySelectorAll('.global-timer').forEach(el => {
-      el.textContent = formatted;
-      if (remaining < 600) {
-        el.style.color = '#c0392b';
-        el.style.animation = 'pulseSubtle 1.5s infinite';
-      } else if (remaining < 1800) {
-        el.style.color = '#b8860b';
-        el.style.animation = 'none';
-      } else {
-        el.style.color = '';
-        el.style.animation = 'none';
-      }
+        if (roundStatus === 'LOCKED') {
+            el.textContent = 'LOCKED';
+            el.style.color = 'rgba(192,57,43,0.7)';
+            el.style.animation = 'none';
+        } else if (roundStatus === 'UNLOCKED') {
+            el.textContent = 'NOT STARTED';
+            el.style.color = 'rgba(160,174,192,0.6)';
+            el.style.animation = 'none';
+        } else if (roundStatus === 'COMPLETED' || (roundStatus === 'RUNNING' && displayRemaining <= 0)) {
+            el.textContent = 'TIME UP';
+            el.style.color = '#c0392b';
+            el.style.animation = 'pulseSubtle 1.5s infinite';
+        } else if (roundStatus === 'RUNNING') {
+            const h = Math.floor(displayRemaining / 3600);
+            const m = Math.floor((displayRemaining % 3600) / 60);
+            const s = displayRemaining % 60;
+            const formatted = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            el.textContent = formatted;
+            if (displayRemaining < 600) {
+                el.style.color = '#c0392b';
+                el.style.animation = 'pulseSubtle 1.5s infinite';
+            } else if (displayRemaining < 1800) {
+                el.style.color = '#b8860b';
+                el.style.animation = 'none';
+            } else {
+                el.style.color = '';
+                el.style.animation = 'none';
+            }
+        }
     });
 }
 
-function localTick() {
-    if (!isPaused && serverRemaining > 0) {
-        serverRemaining--;
-        updateTimerDisplay(serverRemaining);
-    }
-}
-
-// Sync with server every 10 seconds
+// Sync with server every 10 seconds (server is authoritative)
 setInterval(syncTimer, 10000);
-// Tick locally every second
-setInterval(localTick, 1000);
+// Tick display locally every second for smooth countdown
+setInterval(updateTimerDisplay, 1000);
+// Initial sync
 syncTimer();
+</script>
+<script>
+(function() {
+  if (window._bgAudioInited) return;
+  window._bgAudioInited = true;
+  
+  const a = new Audio('{{ url_for("static", filename="audio/horror-background.mp3") }}');
+  a.loop = true;
+  a.volume = 0;
+  
+  const fadeIn = () => {
+    let v = 0;
+    a.volume = 0;
+    const f = setInterval(() => {
+      v += 0.05;
+      if (v >= 0.15) { a.volume = 0.15; clearInterval(f); }
+      else { a.volume = v; }
+    }, 200);
+  };
+
+  const fadeOut = () => {
+    let v = a.volume;
+    const f = setInterval(() => {
+      v -= 0.05;
+      if (v <= 0) { a.pause(); clearInterval(f); }
+      else { a.volume = v; }
+    }, 200);
+  };
+
+  if (sessionStorage.getItem('bgAudioPlaying') === 'true') {
+    a.currentTime = parseFloat(sessionStorage.getItem('bgAudioTime') || 0);
+    a.play().then(() => {
+      fadeIn();
+    }).catch(e => {
+      console.warn('Autoplay blocked, waiting for interaction:', e);
+      const resume = () => {
+        a.play().then(() => fadeIn()).catch(err => console.warn(err));
+        document.removeEventListener('click', resume);
+      };
+      document.addEventListener('click', resume);
+    });
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (!a.paused) {
+      sessionStorage.setItem('bgAudioTime', a.currentTime);
+    }
+  });
+
+  document.addEventListener('click', e => {
+    const el = e.target.closest('a, button, .action-link, .hotspot, .hd-tab');
+    if (!el) return;
+    
+    const t = (el.textContent || '').toUpperCase();
+    
+    if (t.includes('INVESTIGATION SCENE') || t.includes('INVESTIGATION') || t.includes('CRIME SCENE')) {
+      if (sessionStorage.getItem('bgAudioPlaying') !== 'true') {
+        sessionStorage.setItem('bgAudioPlaying', 'true');
+        a.play().then(() => fadeIn()).catch(err => console.warn(err));
+      }
+    }
+    
+    if (t.includes('LOGOUT') || (t.includes('SUBMIT') && t.includes('FINAL'))) {
+      sessionStorage.removeItem('bgAudioPlaying');
+      fadeOut();
+    }
+  });
+})();
 </script>
 </body>
 </html>

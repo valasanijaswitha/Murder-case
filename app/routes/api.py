@@ -1,17 +1,53 @@
+from functools import wraps
 from flask import Blueprint, request, jsonify, session
 from app.models import db, Team, Evidence, ActivityLog
 from app.engine.game_engine import GameEngine
 
 api_bp = Blueprint('api', __name__)
 
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get('is_admin'):
+            return jsonify({"error": "Unauthorized"}), 401
+        return view(*args, **kwargs)
+    return wrapped
+
 @api_bp.route('/timer')
 def get_timer():
-    remaining = GameEngine.get_remaining_seconds()
-    timer = GameEngine.get_timer()
-    h = remaining // 3600
-    m = (remaining % 3600) // 60
-    s = remaining % 60
-    return jsonify({"remaining": remaining, "formatted": f"{h:02d}:{m:02d}:{s:02d}", "is_paused": timer.is_paused})
+    if 'team_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    team = Team.query.get(session['team_id'])
+    if not team:
+        return jsonify({"error": "Not found"}), 404
+        
+    rc = GameEngine.get_round_config(team.current_round)
+    
+    if rc:
+        GameEngine.check_round_expired(team.current_round)
+        remaining = GameEngine.get_round_remaining_seconds(team.current_round)
+        h = remaining // 3600
+        m = (remaining % 3600) // 60
+        s = remaining % 60
+        is_not_started = rc.status in ('LOCKED', 'UNLOCKED')
+        is_paused = False # No longer using pause
+        is_started = rc.status == 'RUNNING'
+    else:
+        remaining = 0
+        h, m, s = 0, 0, 0
+        is_not_started = True
+        is_paused = False
+        is_started = False
+        
+    return jsonify({
+        "remaining": remaining,
+        "formatted": f"{h:02d}:{m:02d}:{s:02d}",
+        "is_paused": is_paused,
+        "is_started": is_started,
+        "is_not_started": is_not_started,
+        "status": rc.status if rc else 'LOCKED'
+    })
 
 @api_bp.route('/team/state')
 def team_state():
@@ -20,11 +56,15 @@ def team_state():
     team = Team.query.get(session['team_id'])
     if not team:
         return jsonify({"error": "Not found"}), 404
+    rc = GameEngine.get_round_config(team.current_round)
+    round_status = rc.status if rc else 'LOCKED'
     return jsonify({
         "score": team.score,
         "ghost_points": team.ghost_points,
         "current_round": team.current_round,
         "authorized_round": getattr(team, 'authorized_round', 1),
+        "round_completed": getattr(team, 'round_completed', False),
+        "round_status": round_status,
         "solved_puzzles": team.solved_puzzles.split(',') if team.solved_puzzles else [],
         "unlocked_evidence": team.unlocked_evidence.split(',') if team.unlocked_evidence else [],
         "status": team.status
@@ -74,24 +114,47 @@ def final_accusation_api():
     )
     return jsonify(result)
 
-# Admin API
-@api_bp.route('/admin/timer/start', methods=['POST'])
-def admin_start_timer():
-    GameEngine.start_timer()
+@api_bp.route('/admin/round/<int:round_number>/unlock', methods=['POST'])
+@admin_required
+def admin_unlock_round(round_number):
+    rc = GameEngine.get_round_config(round_number)
+    if rc and rc.status == 'LOCKED':
+        rc.status = 'UNLOCKED'
+        db.session.commit()
     return jsonify({"ok": True})
 
-@api_bp.route('/admin/timer/pause', methods=['POST'])
-def admin_pause_timer():
-    GameEngine.pause_timer()
+@api_bp.route('/admin/round/<int:round_number>/start', methods=['POST'])
+@admin_required
+def admin_start_round(round_number):
+    from datetime import datetime, timezone
+    rc = GameEngine.get_round_config(round_number)
+    if rc and rc.status == 'UNLOCKED':
+        rc.status = 'RUNNING'
+        rc.started_at = datetime.now(timezone.utc)
+        db.session.commit()
     return jsonify({"ok": True})
 
-@api_bp.route('/admin/timer/add', methods=['POST'])
-def admin_add_time():
-    data = request.json
-    GameEngine.add_time(int(data.get('seconds', 300)))
+@api_bp.route('/admin/round/<int:round_number>/end', methods=['POST'])
+@admin_required
+def admin_end_round(round_number):
+    rc = GameEngine.get_round_config(round_number)
+    if rc and rc.status == 'RUNNING':
+        rc.status = 'COMPLETED'
+        db.session.commit()
+    return jsonify({"ok": True})
+
+@api_bp.route('/admin/clear_test_participants', methods=['POST'])
+@admin_required
+def admin_clear_test_participants():
+    from app.models import ActivityLog, FinalAccusation
+    ActivityLog.query.delete()
+    FinalAccusation.query.delete()
+    Team.query.delete()
+    db.session.commit()
     return jsonify({"ok": True})
 
 @api_bp.route('/admin/team/<int:team_id>/round', methods=['POST'])
+@admin_required
 def admin_force_round(team_id):
     data = request.json
     team = Team.query.get(team_id)
@@ -103,6 +166,7 @@ def admin_force_round(team_id):
     return jsonify({"ok": True})
 
 @api_bp.route('/admin/team/<int:team_id>/ghost', methods=['POST'])
+@admin_required
 def admin_grant_ghost(team_id):
     team = Team.query.get(team_id)
     if team:
@@ -111,6 +175,7 @@ def admin_grant_ghost(team_id):
     return jsonify({"ok": True})
 
 @api_bp.route('/admin/team/<int:team_id>/pause', methods=['POST'])
+@admin_required
 def admin_pause_team(team_id):
     team = Team.query.get(team_id)
     if team:
@@ -119,6 +184,7 @@ def admin_pause_team(team_id):
     return jsonify({"ok": True, "status": team.status})
 
 @api_bp.route('/admin/teams')
+@admin_required
 def admin_teams():
     teams = Team.query.all()
     result = []
@@ -130,10 +196,10 @@ def admin_teams():
             "ghost_points": t.ghost_points, "status": t.status,
             "solved": t.solved_puzzles
         })
-    remaining = GameEngine.get_remaining_seconds()
-    return jsonify({"teams": result, "timer_remaining": remaining})
+    return jsonify({"teams": result})
 
 @api_bp.route('/admin/logs/<int:team_id>')
+@admin_required
 def admin_team_logs(team_id):
     logs = ActivityLog.query.filter_by(team_id=team_id).order_by(ActivityLog.timestamp.desc()).limit(50).all()
     return jsonify([{

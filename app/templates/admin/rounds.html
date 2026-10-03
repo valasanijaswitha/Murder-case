@@ -16,9 +16,13 @@
 .round-card {
     padding: 24px;
     display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 20px;
 }
+.round-card.status-running { border-color: rgba(39,174,96,0.5); }
+.round-card.status-completed { opacity: 0.7; }
+
 .rc-info {
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 12px; flex-grow: 1;
 }
 .rc-header {
     display: flex; align-items: center; gap: 16px;
@@ -31,10 +35,15 @@
     font-family: var(--fd); font-size: 28px; font-weight: 700;
     letter-spacing: 0.1em; color: var(--text-bright);
 }
-.rc-status {
-    font-family: var(--fm); font-size: 16px; padding: 4px 8px;
-    border: 1px solid var(--border-ac); color: var(--accent); border-radius: 2px;
+.rc-badge {
+    font-family: var(--fm); font-size: 13px; padding: 4px 10px;
+    border: 1px solid; border-radius: 2px;
 }
+.badge-locked   { color: var(--danger);  border-color: rgba(192,57,43,0.4); }
+.badge-unlocked { color: #c8a535;        border-color: rgba(184,134,11,0.5); }
+.badge-running  { color: var(--success); border-color: rgba(39,174,96,0.5); }
+.badge-completed{ color: var(--accent);  border-color: rgba(91,196,203,0.4); }
+
 .rc-details {
     display: flex; gap: 24px;
     font-family: var(--fm); font-size: 14px; color: var(--text-dim);
@@ -42,43 +51,65 @@
 .rc-detail span { color: var(--text); margin-left: 6px; }
 
 .rc-controls {
-    display: flex; flex-direction: column; gap: 10px; min-width: 200px;
+    display: flex; flex-direction: column; gap: 8px; min-width: 220px;
 }
 .rc-btn {
     padding: 10px; background: transparent; border: 1px solid var(--border);
-    color: var(--text-bright); font-family: var(--fd); font-size: 14px; font-weight: 600;
+    color: var(--text-bright); font-family: var(--fd); font-size: 13px; font-weight: 600;
     letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
     transition: all 0.2s; text-align: center;
 }
-.rc-btn:hover { border-color: var(--border-ac); color: var(--accent); background: rgba(255,255,255,0.02); }
+.rc-btn:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
+.rc-btn-unlock { border-color: rgba(184,134,11,0.45); color: #c8a535; }
+.rc-btn-unlock:hover:not(:disabled) { background: rgba(184,134,11,0.1); }
+.rc-btn-start  { border-color: rgba(39,174,96,0.45); color: var(--success); }
+.rc-btn-start:hover:not(:disabled)  { background: rgba(39,174,96,0.1); }
+.rc-btn-end    { border-color: rgba(192,57,43,0.45); color: var(--danger); }
+.rc-btn-end:hover:not(:disabled)    { background: rgba(192,57,43,0.1); }
 </style>
 {% endblock %}
 
 {% block admin_content %}
 <h2 class="section-title decrypted-text" data-text="ROUND MANAGEMENT">ROUND MANAGEMENT</h2>
+<p style="font-family:var(--fm); font-size:13px; color:var(--text-dim); margin-bottom:24px; letter-spacing:0.1em;">
+    Use <a href="{{ url_for('admin.event_control') }}" style="color:var(--accent);">Event Control</a> for live round controls during the event. This page shows current round configurations.
+</p>
 
 <div class="rounds-grid animated-list">
     {% for r in rounds %}
-    <div class="round-card glass-surface animated-list-item">
+    <div class="round-card glass-surface animated-list-item status-{{ r.status|lower }}">
         <div class="rc-info">
             <div class="rc-header">
                 <div class="rc-num">0{{ r.round_number }}</div>
                 <div class="rc-name">{{ r.name }}</div>
-                <div class="rc-status">{% if r.auto_progress %}AUTO-PROGRESS ON{% else %}MANUAL ONLY{% endif %}</div>
+                <div class="rc-badge badge-{{ r.status|lower }}">{{ r.status }}</div>
             </div>
             <div class="rc-details">
-                <div class="rc-detail">TIMING: <span>{% if r.is_global %}GLOBAL SCHEDULE{% else %}PER-TEAM TIMER ({{ r.duration_minutes }}m){% endif %}</span></div>
-                <div class="rc-detail">SCHEDULED START: <span>{{ r.scheduled_start.strftime('%H:%M') if r.scheduled_start else 'IMMEDIATE' }}</span></div>
+                <div class="rc-detail">DURATION: <span>{{ r.duration_minutes }} MINUTES</span></div>
+                <div class="rc-detail">STARTED AT: <span>{{ r.started_at.strftime('%H:%M:%S UTC') if r.started_at else 'NOT STARTED' }}</span></div>
             </div>
         </div>
         
         <div class="rc-controls">
-            
-            
-            <button class="rc-btn" style="border-color:rgba(192,57,43,0.4); color:var(--danger);" onclick="alert('Locking round...')">LOCK ROUND</button>
+            <button class="rc-btn rc-btn-unlock" onclick="roundCtrl({{ r.round_number }}, 'unlock')"
+                    {% if r.status != 'LOCKED' %}disabled{% endif %}>🔓 UNLOCK</button>
+            <button class="rc-btn rc-btn-start" onclick="roundCtrl({{ r.round_number }}, 'start')"
+                    {% if r.status != 'UNLOCKED' %}disabled{% endif %}>▶ START</button>
+            <button class="rc-btn rc-btn-end" onclick="roundCtrl({{ r.round_number }}, 'end')"
+                    {% if r.status != 'RUNNING' %}disabled{% endif %}>⏹ END</button>
         </div>
     </div>
     {% endfor %}
 </div>
-{% endblock %}
 
+<script>
+async function roundCtrl(roundNumber, action) {
+    const resp = await fetch(`/api/admin/round/${roundNumber}/${action}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'
+    });
+    const d = await resp.json();
+    if(d.ok) location.reload();
+    else alert('Action failed');
+}
+</script>
+{% endblock %}

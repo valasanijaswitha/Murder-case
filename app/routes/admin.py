@@ -1,17 +1,21 @@
+import hmac
+import os
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import db, Team, Admin, ActivityLog, EventTimer
+from app.models import db, Team, Admin, ActivityLog
 from app.engine.game_engine import GameEngine
 
 admin_bp = Blueprint('admin', __name__)
 
-ADMIN_PASSWORD = 'helix-admin-2026'
-
 @admin_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    admin_password = os.environ.get('ADMIN_PASSWORD')
+    if not admin_password:
+        return render_template('admin/login.html', error="Admin login is not configured."), 503
     if request.method == 'POST':
-        if request.form.get('password') == ADMIN_PASSWORD:
+        if hmac.compare_digest(request.form.get('password', ''), admin_password):
             session['is_admin'] = True
+            session.permanent = True
             return redirect(url_for('admin.dashboard'))
         return render_template('admin/login.html', error="Invalid password.")
     return render_template('admin/login.html')
@@ -21,11 +25,8 @@ def dashboard():
     if not session.get('is_admin'):
         return redirect(url_for('admin.login'))
     teams = Team.query.all()
-    timer = GameEngine.get_timer()
-    remaining = GameEngine.get_remaining_seconds()
-    h, m, s = remaining // 3600, (remaining % 3600) // 60, remaining % 60
-    return render_template('admin/dashboard.html', teams=teams, timer=timer,
-                           time_str=f"{h:02d}:{m:02d}:{s:02d}")
+    rounds = _ensure_round_configs()
+    return render_template('admin/dashboard.html', teams=teams, rounds=rounds)
 
 @admin_bp.route('/teams')
 def teams():
@@ -45,23 +46,31 @@ def attendance():
 def event_control():
     if not session.get('is_admin'):
         return redirect(url_for('admin.login'))
-    timer = GameEngine.get_timer()
-    remaining = GameEngine.get_remaining_seconds()
-    h, m, s = remaining // 3600, (remaining % 3600) // 60, remaining % 60
-    return render_template('admin/event_control.html', timer=timer, time_str=f"{h:02d}:{m:02d}:{s:02d}")
+    rounds = _ensure_round_configs()
+    timers = {}
+    for r in rounds:
+        remaining = GameEngine.get_round_remaining_seconds(r.round_number)
+        h, m, s = remaining // 3600, (remaining % 3600) // 60, remaining % 60
+        timers[r.round_number] = f"{h:02d}:{m:02d}:{s:02d}"
+    return render_template('admin/event_control.html', rounds=rounds, timers=timers)
+
+def _ensure_round_configs():
+    """Seed default RoundConfig rows if they don't exist yet."""
+    from app.models import RoundConfig
+    round_configs = RoundConfig.query.order_by(RoundConfig.round_number).all()
+    if not round_configs:
+        for i, name in [(1, 'CRIME SCENE'), (2, 'DIGITAL TRAIL'), (3, 'PROJECT 9'), (4, 'DEDUCTION')]:
+            db.session.add(RoundConfig(round_number=i, name=name, status='LOCKED', duration_minutes=30))
+        db.session.commit()
+        round_configs = RoundConfig.query.order_by(RoundConfig.round_number).all()
+    return round_configs
+
 
 @admin_bp.route('/rounds')
 def rounds():
     if not session.get('is_admin'):
         return redirect(url_for('admin.login'))
-    from app.models import RoundConfig
-    round_configs = RoundConfig.query.order_by(RoundConfig.round_number).all()
-    # Seed default configs if missing
-    if not round_configs:
-        for i, name in [(1, 'CRIME SCENE'), (2, 'DIGITAL TRAIL'), (3, 'PROJECT 9'), (4, 'DEDUCTION')]:
-            db.session.add(RoundConfig(round_number=i, name=name))
-        db.session.commit()
-        round_configs = RoundConfig.query.order_by(RoundConfig.round_number).all()
+    round_configs = _ensure_round_configs()
     return render_template('admin/rounds.html', rounds=round_configs)
 
 @admin_bp.route('/puzzles')

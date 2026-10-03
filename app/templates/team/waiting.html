@@ -11,23 +11,27 @@
 }
 .w-title {
     font-family: var(--fd); font-size: 32px; font-weight: 700;
-    letter-spacing: 0.2em; color: var(--success); margin-bottom: 12px;
+    letter-spacing: 0.2em; margin-bottom: 12px;
 }
+.w-title.locked { color: var(--danger); }
+.w-title.unlocked { color: var(--warn, #b8860b); }
 .w-subtitle {
     font-family: var(--fm); font-size: 14px; color: var(--text-dim);
     letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 40px;
 }
 .w-card {
-    padding: 40px; max-width: 500px; width: 100%;
+    padding: 40px; max-width: 520px; width: 100%;
 }
 .w-desc {
     font-family: var(--fb); font-size: 14px; line-height: 1.6;
     color: var(--text-bright); margin-bottom: 24px;
 }
-.w-timer {
-    font-family: var(--fm); font-size: 24px; color: var(--accent);
-    margin-bottom: 30px;
+.w-status {
+    font-family: var(--fm); font-size: 20px; margin-bottom: 30px;
+    letter-spacing: 0.2em;
 }
+.w-status.locked { color: var(--danger); }
+.w-status.unlocked { color: var(--warn, #b8860b); }
 .spinner {
     width: 40px; height: 40px; margin: 0 auto;
     border: 2px solid var(--border);
@@ -41,41 +45,57 @@
 
 {% block content %}
 <div class="waiting-container">
-    <div class="w-title glitch-text" data-text="ROUND COMPLETED">ROUND COMPLETED</div>
-    <div class="w-subtitle">PREVIOUS ROUND OBJECTIVES MET</div>
-    
+    {% if status == 'LOCKED' %}
+    <div class="w-title locked glitch-text" data-text="ACCESS RESTRICTED">ACCESS RESTRICTED</div>
+    <div class="w-subtitle">ROUND {{ rc.round_number if rc else '' }} — STATUS: LOCKED</div>
+    {% else %}
+    <div class="w-title unlocked" style="color:var(--accent);">STANDBY</div>
+    <div class="w-subtitle">ROUND {{ rc.round_number if rc else '' }} — STATUS: UNLOCKED — AWAITING START</div>
+    {% endif %}
+
     <div class="glass-surface w-card animated-list">
+        {% if message %}
+        <div class="animated-list-item w-desc" style="color:var(--danger); font-size:16px; letter-spacing:0.1em;">
+            {{ message }}
+        </div>
+        {% elif status == 'LOCKED' %}
         <div class="animated-list-item w-desc">
-            Your team has successfully submitted all deductions for this phase. 
-            The next phase, <strong>{{ rc.name if rc else 'Unknown' }}</strong>, is currently locked by central command.
+            <strong>{{ rc.name if rc else 'NEXT ROUND' }}</strong> has not been released by central command.<br><br>
+            Wait for the Game Master to unlock this phase.
         </div>
-        
-        <div class="animated-list-item w-timer">
-            {% if rc and rc.scheduled_start %}
-                SCHEDULED RELEASE: {{ rc.scheduled_start.strftime('%H:%M') }}
-            {% else %}
-                AWAITING ADMINISTRATOR AUTHORIZATION
-            {% endif %}
+        {% else %}
+        <div class="animated-list-item w-desc">
+            <strong>{{ rc.name if rc else 'THIS ROUND' }}</strong> has been unlocked.<br><br>
+            The timer has not started yet. Stand by — the Game Master will start the round shortly.
         </div>
-        
+        {% endif %}
+
+        <div class="animated-list-item w-status {{ status|lower }}">
+            {% if status == 'LOCKED' %}🔒 ROUND LOCKED{% else %}⏳ AWAITING GAME MASTER START{% endif %}
+        </div>
+
         <div class="animated-list-item spinner"></div>
         <div class="animated-list-item" style="font-family:var(--fm); font-size: 14px; color:var(--text-dim); margin-top:20px;">
-            POLLING SYSTEM... DO NOT REFRESH
+            MONITORING SYSTEM... WILL UPDATE AUTOMATICALLY
         </div>
     </div>
 </div>
 <script src="{{ url_for('static', filename='js/cinematic.js') }}"></script>
 <script>
-// Poll for state changes
+// Poll for round state changes every 5 seconds
 setInterval(async () => {
     try {
         const r = await fetch('/api/team/state');
         const d = await r.json();
-        if(d.authorized_round >= d.current_round) {
+        // If round_status becomes RUNNING, reload to enter the investigation
+        if(d.round_status === 'RUNNING') {
             window.location = '{{ url_for("team.investigation") }}';
+        }
+        // If round_status becomes UNLOCKED (was LOCKED before), reload
+        if('{{ status }}' === 'LOCKED' && d.round_status === 'UNLOCKED') {
+            window.location.reload();
         }
     } catch(e) {}
 }, 5000);
 </script>
 {% endblock %}
-
