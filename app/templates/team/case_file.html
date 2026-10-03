@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-{% set unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else [] %}
 {% set ev_data = {
   'body': ('FORENSIC','Victim — Dr. Vikram Sen','Cardiac arrest, 02:19 AM. Locked room, no forced entry.'),
   'cctv_feed': ('CCTV','Feed — Corridor B','Interrupted 02:13–02:15 AM. Clock offset +19 seconds.'),
@@ -110,4 +109,3 @@
 
 </div>
 {% endblock %}
-

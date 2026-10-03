@@ -133,6 +133,7 @@
         </div>
       </div>
       <div class="s-body">
+        {% if can_view_round2 %}
         <div>
           <div class="s-sec-lbl">Statement</div>
           <div class="s-sec-val">"{{ s.statement }}"</div>
@@ -145,14 +146,17 @@
           <div class="s-sec-lbl">Alibi</div>
           <div class="s-sec-val">{{ s.alibi }}</div>
         </div>
-        {% if team.current_round >= 2 %}
+        {% else %}
+        <div class="s-sec-val">Investigation details remain classified until your team receives Round 2 access.</div>
+        {% endif %}
+        {% if can_view_round2 %}
         <div>
           <div class="s-sec-lbl" style="color:var(--danger);">Suspicious Details</div>
           <div class="s-sec-val alert">{{ s.suspicious }}</div>
         </div>
         {% endif %}
         
-        {% if s.evidence and team.current_round >= 2 %}
+        {% if s.evidence and can_view_round2 %}
         <div style="margin-top:auto; padding-top:12px; border-top:1px solid var(--border);">
           <div class="s-sec-lbl">Associated Evidence</div>
           <div class="s-evidence">
@@ -169,4 +173,3 @@
 
 </div>
 {% endblock %}
-

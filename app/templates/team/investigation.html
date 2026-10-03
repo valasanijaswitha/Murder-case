@@ -41,6 +41,7 @@
 }
 .hd-tab.active  { border-color: var(--border-ac); color: var(--text-bright); background: var(--accent-dim); }
 .hd-tab.done    { border-color: rgba(39,174,96,0.3); color: rgba(39,174,96,0.75); background: rgba(39,174,96,0.04); }
+.hd-tab.available { border-color: rgba(91,196,203,0.3); color: var(--accent); background: rgba(91,196,203,0.04); }
 .hd-tab.locked  { border-color: rgba(255,255,255,0.04); color: var(--text-dim); opacity: 0.4; cursor: not-allowed; }
 .hd-tab-num { font-size: 15px; }
 .hd-meta { display: flex; align-items: center; gap: 16px; }
@@ -671,9 +672,9 @@
 
     <div class="hd-rounds">
       {% for i, label in [(1,'CRIME SCENE'),(2,'DIGITAL TRAIL'),(3,'PROJECT 9'),(4,'DEDUCTION')] %}
-      <div class="hd-tab {% if team.current_round == i %}active{% elif team.current_round > i %}done{% else %}locked{% endif %}"
-           onclick="{% if team.current_round >= i %}switchRound({{i}}){% endif %}">
-        <div class="hd-tab-num">0{{i}} {% if team.current_round > i %}✓{% endif %}</div>
+      <div class="hd-tab {% if team.current_round == i and round_access[i] %}active{% elif team.current_round > i and round_access[i] %}done{% elif round_access[i] %}available{% else %}locked{% endif %}"
+         onclick="{% if round_access[i] %}switchRound({{i}}){% endif %}">
+      <div class="hd-tab-num">0{{i}} {% if round_access[i] and team.current_round > i %}✓{% endif %}</div>
         <div>{{ label }}</div>
       </div>
       {% endfor %}
@@ -703,6 +704,7 @@
     <!-- ── SCENE ── -->
     <div class="scene-area" id="scene-area">
 
+      {% if round_access[1] %}
       <!-- ═══ ROUND 1: Crime Scene ═══ -->
       <div id="scene-r1" class="scene-layer">
         <!-- Lab background -->
@@ -796,7 +798,9 @@
           <div class="hotspot-label">{% if 'smartwatch' in unlocked %}VICTIM SMARTWATCH{% else %}SMARTWATCH [LOCKED]{% endif %}</div>
         </div>
       </div>
+      {% endif %}
 
+      {% if round_access[2] %}
       <!-- ═══ ROUND 2: Digital Trail ═══ -->
       <div id="scene-r2" class="scene-layer hidden">
         <div class="digital-bg"></div>
@@ -853,7 +857,9 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
+      {% if round_access[3] %}
       <!-- ═══ ROUND 3: Project 9 ═══ -->
       <div id="scene-r3" class="scene-layer hidden">
         <div class="p9-bg"></div>
@@ -885,7 +891,9 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
+      {% if round_access[4] %}
       <!-- ═══ ROUND 4: Final Deduction ═══ -->
       <div id="scene-r4" class="scene-layer hidden">
         <div class="r4-bg"></div>
@@ -916,6 +924,7 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
     </div>
     <!-- ── end scene ── -->
@@ -949,6 +958,7 @@
       <div class="rp-block">
         <div class="rp-head">PUZZLES</div>
         {% if team.current_round >= 1 %}
+        {% if round_access[1] %}
         <div class="puzzle-item {% if 'override_code' in solved %}solved{% else %}active{% endif %}"
              onclick="openPuzzle('override_code')">
           <span class="pi-icon">{% if 'override_code' in solved %}✓{% else %}○{% endif %}</span>
@@ -962,7 +972,7 @@
           {% if 'timeline' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
         </div>
         {% endif %}
-        {% if team.current_round >= 2 %}
+        {% if round_access[2] %}
         <div class="puzzle-item {% if 'rohan_lie' in solved %}solved{% else %}active{% endif %}"
              onclick="openPuzzle('rohan_lie')">
           <span class="pi-icon">{% if 'rohan_lie' in solved %}✓{% else %}○{% endif %}</span>
@@ -976,7 +986,7 @@
           {% if 'anika_lie' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
         </div>
         {% endif %}
-        {% if team.current_round >= 3 %}
+        {% if round_access[3] %}
         <div class="puzzle-item {% if 'p9_motive' in solved %}solved{% else %}active{% endif %}"
              onclick="openPuzzle('p9_motive')">
           <span class="pi-icon">{% if 'p9_motive' in solved %}✓{% else %}○{% endif %}</span>
@@ -984,20 +994,27 @@
           {% if 'p9_motive' in solved %}<span class="pi-badge" style="color:var(--success);">SOLVED</span>{% endif %}
         </div>
         {% endif %}
-        {% if team.current_round >= 2 and ('override_code' not in solved or 'timeline' not in solved) == false and team.current_round < 3 %}{% endif %}
-        {% if team.current_round < 2 %}
+        {% if not round_access[1] %}
+        <div class="puzzle-item locked">
+          <span class="pi-icon">■</span>
+          <span>Round 1 puzzles locked</span>
+          <span class="pi-badge" style="color:var(--text-dim);">R1</span>
+        </div>
+        {% endif %}
+        {% if not round_access[2] %}
         <div class="puzzle-item locked">
           <span class="pi-icon">■</span>
           <span>Round 2 puzzles locked</span>
           <span class="pi-badge" style="color:var(--text-dim);">R2</span>
         </div>
         {% endif %}
-        {% if team.current_round < 3 %}
+        {% if not round_access[3] %}
         <div class="puzzle-item locked">
           <span class="pi-icon">■</span>
           <span>Round 3 puzzles locked</span>
           <span class="pi-badge" style="color:var(--text-dim);">R3</span>
         </div>
+        {% endif %}
         {% endif %}
       </div>
 
@@ -1048,11 +1065,17 @@
             </span>
           </div>
           <select id="hint-puzzle" class="ghost-select">
+            {% if round_access[1] %}
             <option value="override_code">Override Code Puzzle</option>
             <option value="timeline">Timeline Puzzle</option>
+            {% endif %}
+            {% if round_access[2] %}
             <option value="rohan_lie">Rohan Contradiction</option>
             <option value="anika_lie">Anika Contradiction</option>
+            {% endif %}
+            {% if round_access[3] %}
             <option value="p9_motive">8th Signature</option>
+            {% endif %}
           </select>
           <input type="number" id="hint-idx" min="0" max="2" value="0"
                  class="ghost-idx-input" placeholder="Hint level (0, 1, 2)">
@@ -1082,17 +1105,19 @@
 
 <script>
 const teamRound = {{ team.current_round }};
+const accessibleRounds = {{ accessible_round_numbers|tojson }};
 const solvedPuzzles = {{ (team.solved_puzzles or '')|tojson }}.split(',').filter(Boolean);
 
 /* ─ Round scene switching ─ */
 function showRound(r) {
+  if(!accessibleRounds.includes(r)) return;
   for(let i=1;i<=4;i++) {
     const el = document.getElementById('scene-r'+i);
     if(el) el.classList.toggle('hidden', i!==r);
   }
 }
 showRound(teamRound);
-function switchRound(r) { if(r<=teamRound) showRound(r); }
+function switchRound(r) { showRound(r); }
 
 function focusGhostSystem() {
   const panel = document.querySelector('.ghost-system');
@@ -1127,6 +1152,7 @@ function openLocked() {
 
 /* ─ Evidence definitions ─ */
 const EVIDENCE = {
+  {% if round_access[1] %}
   'body': {
     title: 'FORENSIC REPORT — DR. VIKRAM SEN',
     html: `
@@ -1266,6 +1292,8 @@ const EVIDENCE = {
       </div>
     `
   },
+  {% endif %}
+  {% if round_access[2] %}
   'rohan_statement': {
     title: 'RECORDED STATEMENT — ROHAN KAPOOR',
     html: `
@@ -1431,6 +1459,8 @@ const EVIDENCE = {
       </div>
     `
   },
+  {% endif %}
+  {% if round_access[3] %}
   'p9_archive': {
     title: 'PROJECT 9 — PREDICTION ARCHIVE: 001',
     html: `
@@ -1513,6 +1543,8 @@ const EVIDENCE = {
       </button>
     `
   },
+  {% endif %}
+  {% if round_access[4] %}
   'final_override': {
     title: 'FINAL SYSTEM OVERRIDE LOG',
     html: `
@@ -1534,6 +1566,8 @@ const EVIDENCE = {
       </div>
     `
   },
+  {% endif %}
+  {% if round_access[1] %}
   'cctv_corrected': {
     title: 'CORRECTED CCTV TIMELINE',
     html: `
@@ -1560,6 +1594,8 @@ const EVIDENCE = {
       </div>
     `
   },
+  {% endif %}
+  {% if round_access[2] %}
   'rohan_secret': {
     title: 'CLASSIFIED — ROHAN\'S HIDDEN DISCOVERY',
     html: `
@@ -1576,6 +1612,7 @@ const EVIDENCE = {
       </p>
     `
   }
+  {% endif %}
 };
 
 function openEvidence(id) {
@@ -1596,6 +1633,7 @@ function openEvidence(id) {
 /* ─ Puzzle definitions ─ */
 function openPuzzle(id) {
   const puzzles = {
+    {% if round_access[1] %}
     'override_code': {
       title: 'PUZZLE 01 — ENCRYPTED NOTE (MORSE)',
       html: `
@@ -1654,6 +1692,8 @@ function openPuzzle(id) {
         <div id="result-timeline" class="puzzle-result"></div>
       `
     },
+    {% endif %}
+    {% if round_access[2] %}
     'rohan_lie': {
       title: 'PUZZLE 03 — CONTRADICTION: ROHAN KAPOOR',
       html: `
@@ -1730,6 +1770,8 @@ function openPuzzle(id) {
         <div id="result-anika_lie" class="puzzle-result"></div>
       `
     },
+    {% endif %}
+    {% if round_access[3] %}
     'p9_motive': {
       title: 'PUZZLE 05 — THE EIGHTH SIGNATURE',
       html: `
@@ -1767,6 +1809,7 @@ function openPuzzle(id) {
         <div id="result-p9_motive" class="puzzle-result"></div>
       `
     }
+    {% endif %}
   };
 
   const pz = puzzles[id];
@@ -1903,8 +1946,3 @@ function hintModal(puzzleId) {
 }
 </script>
 {% endblock %}
-
-
-
-
-

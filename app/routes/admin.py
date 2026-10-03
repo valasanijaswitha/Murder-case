@@ -47,12 +47,28 @@ def event_control():
     if not session.get('is_admin'):
         return redirect(url_for('admin.login'))
     rounds = _ensure_round_configs()
+    teams = Team.query.order_by(Team.team_name).all()
+    team_round_access = {
+        team.id: GameEngine.ensure_team_round_access(team, commit=False)
+        for team in teams
+    }
+    db.session.commit()
     timers = {}
     for r in rounds:
         remaining = GameEngine.get_round_remaining_seconds(r.round_number)
         h, m, s = remaining // 3600, (remaining % 3600) // 60, remaining % 60
         timers[r.round_number] = f"{h:02d}:{m:02d}:{s:02d}"
-    return render_template('admin/event_control.html', rounds=rounds, timers=timers)
+    active_teams = [team for team in teams if team.status == 'ACTIVE']
+    round_counts = {
+        round_number: sum(team.current_round == round_number for team in active_teams)
+        for round_number in range(1, 5)
+    }
+    completed_count = sum(team.status == 'FINISHED' for team in teams)
+    return render_template(
+        'admin/event_control.html', rounds=rounds, timers=timers, teams=teams,
+        team_round_access=team_round_access, active_team_count=len(active_teams),
+        round_counts=round_counts, completed_count=completed_count
+    )
 
 def _ensure_round_configs():
     """Seed default RoundConfig rows if they don't exist yet."""

@@ -96,6 +96,7 @@
       <div class="tl-desc">Facility operates normally. Meera Thomas begins compiling weekly data reports in the lab.</div>
     </div>
 
+    {% if can_view_round2 %}
     <!-- Event 2 -->
     <div class="tl-event {% if 'security_logs' in unlocked %}active{% else %}locked{% endif %}">
       <div class="tl-dot"></div>
@@ -137,16 +138,20 @@
         {% endif %}
       </div>
     </div>
+    {% endif %}
 
     <!-- Event 5 -->
+    {% if can_view_round1 %}
     <div class="tl-event active">
       <div class="tl-dot"></div>
       <div class="tl-time">02:03 AM</div>
       <div class="tl-title">Final Valid Entry</div>
       <div class="tl-desc">Last confirmed door access log before systems begin desynchronizing.</div>
     </div>
+    {% endif %}
     
     <!-- Event 6 -->
+    {% if can_view_round1 %}
     <div class="tl-event {% if 'cctv_corrected' in unlocked %}anomaly{% else %}locked{% endif %}">
       <div class="tl-dot"></div>
       <div class="tl-time">02:13 AM</div>
@@ -159,6 +164,7 @@
         {% endif %}
       </div>
     </div>
+    {% endif %}
 
     <!-- Event 7 -->
     <div class="tl-event anomaly">
@@ -166,7 +172,7 @@
       <div class="tl-time">02:19 AM</div>
       <div class="tl-title">Time of Death</div>
       <div class="tl-desc">
-        Dr. Vikram Sen suffers fatal cardiac arrest. Project 9 prediction archive later reveals a 94.7% confidence prediction for this exact minute.
+        Dr. Vikram Sen suffers fatal cardiac arrest.{% if can_view_round3 %} Project 9 prediction archive later reveals a 94.7% confidence prediction for this exact minute.{% endif %}
       </div>
     </div>
 
@@ -181,4 +187,3 @@
   </div>
 </div>
 {% endblock %}
-

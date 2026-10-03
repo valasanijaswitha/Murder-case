@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import Blueprint, request, jsonify, session
-from app.models import db, Team, Evidence, ActivityLog
+from app.models import db, Team, TeamRoundAccess, Evidence, ActivityLog
 from app.engine.game_engine import GameEngine
 
 api_bp = Blueprint('api', __name__)
@@ -21,6 +21,8 @@ def get_timer():
     team = Team.query.get(session['team_id'])
     if not team:
         return jsonify({"error": "Not found"}), 404
+    if not GameEngine.can_access_round(team, team.current_round, require_global=False):
+        return jsonify({"error": "Round access denied"}), 403
         
     rc = GameEngine.get_round_config(team.current_round)
     
@@ -56,6 +58,9 @@ def team_state():
     team = Team.query.get(session['team_id'])
     if not team:
         return jsonify({"error": "Not found"}), 404
+    if not GameEngine.can_access_round(team, team.current_round, require_global=False):
+        return jsonify({"error": "Round access denied"}), 403
+    accesses = GameEngine.ensure_team_round_access(team)
     rc = GameEngine.get_round_config(team.current_round)
     round_status = rc.status if rc else 'LOCKED'
     return jsonify({
@@ -64,6 +69,9 @@ def team_state():
         "current_round": team.current_round,
         "authorized_round": getattr(team, 'authorized_round', 1),
         "round_completed": getattr(team, 'round_completed', False),
+        "round_access": sorted(
+            round_number for round_number, access in accesses.items() if access.unlocked
+        ),
         "round_status": round_status,
         "solved_puzzles": team.solved_puzzles.split(',') if team.solved_puzzles else [],
         "unlocked_evidence": team.unlocked_evidence.split(',') if team.unlocked_evidence else [],
@@ -75,12 +83,16 @@ def get_evidence(ev_id):
     if 'team_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
     team = Team.query.get(session['team_id'])
-    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
-    if ev_id not in unlocked:
-        return jsonify({"error": "Locked"}), 403
+    if not team:
+        return jsonify({"error": "Not found"}), 404
     ev = Evidence.query.get(ev_id)
     if not ev:
         return jsonify({"error": "Not found"}), 404
+    if not GameEngine.can_access_round(team, ev.round):
+        return jsonify({"error": "Round access denied"}), 403
+    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
+    if ev_id not in unlocked:
+        return jsonify({"error": "Locked"}), 403
     GameEngine.log(team.id, 'EVIDENCE_OPENED', 'EVIDENCE', ev_id)
     db.session.commit()
     return jsonify({"id": ev.id, "name": ev.name, "content": ev.content, "type": ev.type})
@@ -112,6 +124,9 @@ def final_accusation_api():
         data.get('why', ''), data.get('truth', ''),
         data.get('evidence', [])
     )
+    if not result.get('success'):
+        status = 403 if 'access' in result.get('error', '').lower() else 409
+        return jsonify(result), status
     return jsonify(result)
 
 @api_bp.route('/admin/round/<int:round_number>/unlock', methods=['POST'])
@@ -159,6 +174,7 @@ def admin_clear_test_participants():
     from app.models import ActivityLog, FinalAccusation
     ActivityLog.query.delete()
     FinalAccusation.query.delete()
+    TeamRoundAccess.query.delete()
     Team.query.delete()
     db.session.commit()
     return jsonify({"ok": True})
@@ -170,10 +186,36 @@ def admin_force_round(team_id):
     team = Team.query.get(team_id)
     if team:
         target_round = int(data.get('round', team.current_round))
+        if target_round < 1 or target_round > 4:
+            return jsonify({"error": "Invalid round"}), 400
         team.current_round = target_round
         team.authorized_round = target_round
         db.session.commit()
+        GameEngine.ensure_team_round_access(team)
     return jsonify({"ok": True})
+
+@api_bp.route('/admin/team/<int:team_id>/round/<int:round_number>/unlock', methods=['POST'])
+@admin_required
+def admin_unlock_team_round(team_id, round_number):
+    if round_number < 2 or round_number > 4:
+        return jsonify({"error": "Only rounds 2 through 4 can be individually unlocked"}), 400
+    team = Team.query.get(team_id)
+    if not team:
+        return jsonify({"error": "Team not found"}), 404
+
+    accesses = GameEngine.ensure_team_round_access(team)
+    previous = accesses[round_number - 1]
+    if not previous.completed_at:
+        return jsonify({"error": "The previous round is not completed for this team"}), 409
+
+    access = accesses[round_number]
+    if not access.unlocked:
+        from datetime import datetime, timezone
+        access.unlocked = True
+        access.unlocked_at = datetime.now(timezone.utc)
+        GameEngine.log(team.id, 'ROUND_UNLOCKED', 'ROUND', str(round_number))
+        db.session.commit()
+    return jsonify({"ok": True, "team_id": team.id, "round_number": round_number})
 
 @api_bp.route('/admin/team/<int:team_id>/ghost', methods=['POST'])
 @admin_required

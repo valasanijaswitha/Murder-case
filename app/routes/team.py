@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import db, Team, ActivityLog
+from app.models import db, Team, ActivityLog, Evidence
 from app.engine.game_engine import GameEngine
 import random, string
 
@@ -8,6 +8,15 @@ team_bp = Blueprint('team', __name__)
 
 def generate_team_code():
     return 'GHOST-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+
+def _accessible_evidence_ids(team):
+    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
+    evidence = Evidence.query.filter(Evidence.id.in_(unlocked)).all() if unlocked else []
+    accessible = {
+        item.id for item in evidence
+        if GameEngine.can_access_round(team, item.round)
+    }
+    return [ev_id for ev_id in unlocked if ev_id in accessible]
 
 @team_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -31,6 +40,7 @@ def register():
         )
         db.session.add(new_team)
         db.session.commit()
+        GameEngine.ensure_team_round_access(new_team)
         session['team_id'] = new_team.id
         session.permanent = True
         GameEngine.log(new_team.id, 'REGISTERED')
@@ -69,8 +79,18 @@ def dashboard():
         return redirect(url_for('team.login'))
     if not team.story_briefing_completed:
         return redirect(url_for('team.briefing'))
+    accesses = GameEngine.ensure_team_round_access(team)
+    visible_evidence = _accessible_evidence_ids(team)
     session['team_portal_entered'] = team.id
-    return render_template('team/dashboard.html', team=team)
+    return render_template(
+        'team/dashboard.html', team=team,
+        visible_evidence=visible_evidence,
+        round_access={number: access for number, access in accesses.items()},
+        round_content_access={
+            number: GameEngine.can_access_round(team, number)
+            for number in range(1, 5)
+        }
+    )
 
 @team_bp.route('/briefing')
 def briefing():
@@ -109,9 +129,16 @@ def investigation():
         return redirect(url_for('team.login'))
     if not team.story_briefing_completed and session.get('team_portal_entered') != team.id:
         return redirect(url_for('team.briefing'))
-        
+    GameEngine.ensure_team_round_access(team)
+
     from app.models import RoundConfig
     rc = RoundConfig.query.filter_by(round_number=team.current_round).first()
+
+    if not GameEngine.can_access_round(team, team.current_round, require_global=False):
+        return render_template(
+            'team/waiting.html', team=team, rc=rc, status='LOCKED',
+            message=f'ROUND {team.current_round} HAS NOT BEEN UNLOCKED FOR YOUR TEAM.'
+        )
     
     if team.round_completed or (rc and rc.status == 'COMPLETED'):
         return render_template('team/round_complete.html', team=team, round_number=team.current_round)
@@ -128,16 +155,32 @@ def investigation():
     if rc.status == 'COMPLETED':
         return render_template('team/round_complete.html', team=team, round_number=team.current_round)
 
-    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
+    unlocked = _accessible_evidence_ids(team)
     solved = team.solved_puzzles.split(',') if team.solved_puzzles else []
-    return render_template('team/investigation.html', team=team, unlocked=unlocked, solved=solved)
+    round_access = {}
+    for round_number in range(1, 5):
+        rc_round = GameEngine.get_round_config(round_number)
+        round_access[round_number] = (
+            GameEngine.can_access_round(team, round_number)
+            and bool(rc_round and rc_round.status in ('RUNNING', 'COMPLETED'))
+        )
+    return render_template(
+        'team/investigation.html', team=team, unlocked=unlocked, solved=solved,
+        round_access=round_access,
+        accessible_round_numbers=[
+            number for number, is_accessible in round_access.items() if is_accessible
+        ]
+    )
 
 @team_bp.route('/case-file')
 def case_file():
     if 'team_id' not in session:
         return redirect(url_for('team.login'))
     team = Team.query.get(session['team_id'])
-    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
+    if not team:
+        return redirect(url_for('team.login'))
+    GameEngine.ensure_team_round_access(team)
+    unlocked = _accessible_evidence_ids(team)
     return render_template('team/case_file.html', team=team, unlocked=unlocked)
 
 @team_bp.route('/suspects')
@@ -147,8 +190,11 @@ def suspects():
     team = Team.query.get(session['team_id'])
     if not team:
         return redirect(url_for('team.login'))
-    unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else []
-    return render_template('team/suspects.html', team=team, unlocked=unlocked)
+    GameEngine.ensure_team_round_access(team)
+    return render_template(
+        'team/suspects.html', team=team,
+        can_view_round2=GameEngine.can_access_round(team, 2)
+    )
 
 @team_bp.route('/timeline')
 def timeline():
@@ -157,7 +203,13 @@ def timeline():
     team = Team.query.get(session['team_id'])
     if not team:
         return redirect(url_for('team.login'))
-    return render_template('team/timeline.html', team=team)
+    GameEngine.ensure_team_round_access(team)
+    return render_template(
+        'team/timeline.html', team=team,
+        can_view_round1=GameEngine.can_access_round(team, 1),
+        can_view_round2=GameEngine.can_access_round(team, 2),
+        can_view_round3=GameEngine.can_access_round(team, 3)
+    )
 
 @team_bp.route('/notes', methods=['GET', 'POST'])
 def notes():
@@ -180,6 +232,18 @@ def final_accusation():
     if 'team_id' not in session:
         return redirect(url_for('team.login'))
     team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    if team.status == 'FINISHED':
+        return redirect(url_for('team.reveal'))
+    if team.current_round != 4 or not GameEngine.can_access_round(team, 4):
+        return redirect(url_for('team.dashboard'))
+    rc = GameEngine.get_round_config(4)
+    if not rc or rc.status != 'RUNNING':
+        return render_template(
+            'team/waiting.html', team=team, rc=rc,
+            status=rc.status if rc else 'LOCKED'
+        )
     return render_template('team/final_accusation.html', team=team)
 
 @team_bp.route('/reveal')
@@ -187,6 +251,10 @@ def reveal():
     if 'team_id' not in session:
         return redirect(url_for('team.login'))
     team = Team.query.get(session['team_id'])
+    if not team:
+        return redirect(url_for('team.login'))
+    if team.status != 'FINISHED' or not GameEngine.can_access_round(team, 4):
+        return redirect(url_for('team.dashboard'))
     return render_template('team/reveal.html', team=team)
 
 @team_bp.route('/proceed/<int:next_round>', methods=['POST'])
@@ -198,21 +266,31 @@ def proceed_to_round(next_round):
     if not team:
         return redirect(url_for('team.login'))
 
+    if next_round != team.current_round + 1 or next_round > 4:
+        return redirect(url_for('team.investigation'))
+
+    accesses = GameEngine.ensure_team_round_access(team)
+    previous = accesses.get(team.current_round)
+    if not previous or not previous.completed_at:
+        return redirect(url_for('team.investigation'))
+
     from app.models import RoundConfig
     rc = RoundConfig.query.filter_by(round_number=next_round).first()
-
-    if not rc or rc.status == 'LOCKED':
-        # Round not yet available
+    if not GameEngine.can_access_round(team, next_round, require_global=False):
         return render_template('team/waiting.html', team=team, rc=rc, status='LOCKED',
-                               message=f'ROUND {next_round} IS NOT YET AVAILABLE. PLEASE WAIT FOR THE GAME MASTER.')
+                               message=f'ROUND {next_round} HAS NOT BEEN UNLOCKED FOR YOUR TEAM.')
+    if not rc or rc.status not in ('UNLOCKED', 'RUNNING'):
+        return render_template(
+            'team/waiting.html', team=team, rc=rc,
+            status=rc.status if rc else 'LOCKED',
+            message=f'ROUND {next_round} IS NOT CURRENTLY AVAILABLE. PLEASE WAIT FOR THE GAME MASTER.'
+        )
 
-    # Advance team to the next round (they've already completed current)
-    if team.round_completed and team.current_round < next_round:
-        team.current_round = next_round
-        team.round_completed = False
-        team.authorized_round = next_round
-        db.session.commit()
-        GameEngine.log(team.id, 'PROCEED_TO_ROUND', 'ROUND', str(next_round))
-        db.session.commit()
+    team.current_round = next_round
+    team.round_completed = False
+    team.authorized_round = next_round
+    db.session.commit()
+    GameEngine.log(team.id, 'PROCEED_TO_ROUND', 'ROUND', str(next_round))
+    db.session.commit()
 
     return redirect(url_for('team.investigation'))

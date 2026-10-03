@@ -6,7 +6,7 @@
 <title>THE LAST CASE — CASE 09</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:           #07090f;
@@ -29,7 +29,7 @@
   --text-faint:   rgba(226,232,240,0.50);
   --fd: 'Rajdhani', sans-serif;
   --fb: 'Inter', sans-serif;
-  --fm: 'JetBrains Mono', 'Courier New', monospace;
+  --fm: 'IBM Plex Mono', 'Courier New', monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -134,7 +134,7 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  transition: all 0.2s ease-out;
   border: 1px solid;
   text-decoration: none;
   white-space: nowrap;
@@ -145,9 +145,10 @@ body {
   color: var(--accent);
 }
 .btn-primary:hover {
-  background: var(--accent);
-  color: #07090f;
-  border-color: var(--accent);
+  background: rgba(91,196,203,0.18);
+  color: var(--text-bright);
+  border-color: rgba(91,196,203,0.8);
+  transform: translateY(-1px);
 }
 .btn-danger {
   background: var(--danger-dim);
@@ -155,9 +156,10 @@ body {
   color: var(--danger);
 }
 .btn-danger:hover {
-  background: var(--danger);
+  background: rgba(192,57,43,0.18);
   color: #fff;
-  border-color: var(--danger);
+  border-color: rgba(192,57,43,0.8);
+  transform: translateY(-1px);
 }
 .btn-ghost {
   background: transparent;
@@ -165,8 +167,10 @@ body {
   color: var(--text-dim);
 }
 .btn-ghost:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: rgba(91,196,203,0.6);
+  color: var(--text-bright);
+  background: rgba(255,255,255,0.02);
+  transform: translateY(-1px);
 }
 
 /* ── Inputs ── */
@@ -251,8 +255,8 @@ input::placeholder, textarea::placeholder {
   to   { opacity:1; transform:translateX(0); }
 }
 @keyframes pulseSubtle {
-  0%,100% { opacity:0.55; }
-  50%      { opacity:1; }
+  0%,100% { opacity: 0.8; }
+  50% { opacity: 1; }
 }
 @keyframes evidenceIn {
   0% { opacity:0; transform:translateY(-8px); }
@@ -265,6 +269,51 @@ input::placeholder, textarea::placeholder {
 @keyframes blink {
   0%,100% { opacity:1; }
   50% { opacity:0; }
+}
+@keyframes solveRow {
+  0% { border-color: var(--border-ac); background: transparent; }
+  50% { border-color: rgba(39,174,96,0.8); background: rgba(39,174,96,0.1); }
+  100% { border-color: rgba(39,174,96,0.25); background: rgba(39,174,96,0.04); }
+}
+@keyframes solveFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.puzzle-row.just-solved {
+  animation: solveRow 0.5s ease-out forwards;
+}
+.puzzle-row.just-solved .pr-indicator.solved,
+.puzzle-row.just-solved .pr-status.solved {
+  animation: solveFadeIn 0.5s ease-out forwards;
+}
+.stagger-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: staggerReveal 450ms ease-out forwards;
+}
+@keyframes staggerReveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+body::after {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-size: 100% 4px, 120px 120px;
+  opacity: 0.035;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/cinematic.css') }}">
@@ -412,3 +461,8 @@ syncTimer();
 </script>
 </body>
 </html>
+
+
+
+
+

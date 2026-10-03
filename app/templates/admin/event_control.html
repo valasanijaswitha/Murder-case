@@ -11,10 +11,11 @@
 }
 
 .rounds-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px; margin-bottom: 40px;
 }
 .round-card {
+    min-width: 0;
     padding: 24px; border: 1px solid var(--border);
     background: rgba(11,16,28,0.85);
     display: flex; flex-direction: column; gap: 14px;
@@ -72,6 +73,56 @@
 .rnd-btn-start:hover:not(:disabled)  { background: rgba(39,174,96,0.12); border-color: var(--success); }
 .rnd-btn-end    { border-color: rgba(192,57,43,0.45);  color: var(--danger); }
 .rnd-btn-end:hover:not(:disabled)    { background: rgba(192,57,43,0.1); border-color: var(--danger); }
+
+@media (max-width: 1050px) {
+    .rounds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+    .rounds-grid { grid-template-columns: minmax(0, 1fr); }
+}
+.team-access-section {
+    margin-bottom: 36px; padding: 24px;
+    border: 1px solid var(--border); background: rgba(11,16,28,0.65);
+    min-width: 0;
+}
+.team-access-tools {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;
+}
+.team-access-tools input, .team-access-tools select {
+    padding: 10px 12px; background: rgba(0,0,0,0.45);
+    border: 1px solid var(--border); color: var(--text-bright);
+    font-family: var(--fm); font-size: 14px;
+}
+.team-access-tools input { flex: 1 1 220px; min-width: 0; }
+.team-access-tools select { flex: 0 1 180px; }
+.team-progress-summary {
+    display: flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 18px;
+    font-family: var(--fm); font-size: 14px; letter-spacing: 0.1em;
+    color: var(--text-dim);
+}
+.team-progress-summary strong { color: var(--accent); }
+.team-table-wrap { max-width: 100%; overflow-x: auto; }
+.team-access-table {
+    width: 100%; border-collapse: collapse; white-space: nowrap;
+    font-family: var(--fm); font-size: 13px;
+}
+.team-access-table th, .team-access-table td {
+    padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.team-access-table th {
+    color: var(--text-dim); font-size: 12px; letter-spacing: 0.1em;
+}
+.team-access-table td { color: var(--text-bright); }
+.team-round-complete { color: var(--success) !important; }
+.team-round-open { color: var(--accent) !important; }
+.team-round-locked { color: var(--text-dim) !important; }
+.team-unlock-btn {
+    padding: 8px 10px; border: 1px solid rgba(91,196,203,0.35);
+    background: rgba(91,196,203,0.06); color: var(--accent);
+    font-family: var(--fd); font-size: 12px; letter-spacing: 0.08em;
+    cursor: pointer;
+}
+.team-unlock-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Clear Participants Section */
 .danger-zone {
@@ -144,6 +195,7 @@
               {% if status != 'COMPLETED' %}disabled{% endif %}>
         ↻ RESET ROUND {{ r.round_number }}
       </button>
+    </div>
   </div>
   {% else %}
   <div class="animated-list-item" style="color:var(--text-dim); padding:20px;">
@@ -151,6 +203,74 @@
   </div>
   {% endfor %}
 </div>
+
+<section class="team-access-section">
+    <h2 class="section-title">TEAM ACCESS CONTROL</h2>
+    <div class="team-progress-summary">
+        <strong>{{ active_team_count }} TEAMS ACTIVE</strong>
+        <span>R1: {{ round_counts[1] }} teams</span>
+        <span>R2: {{ round_counts[2] }} teams</span>
+        <span>R3: {{ round_counts[3] }} teams</span>
+        <span>R4: {{ round_counts[4] }} teams</span>
+        <span>COMPLETED: {{ completed_count }} teams</span>
+    </div>
+    <div class="team-access-tools">
+        <input type="search" id="team-search" placeholder="Search Team..." aria-label="Search teams">
+        <select id="team-round-filter" aria-label="Filter teams by current round">
+            <option value="all">ALL</option>
+            <option value="1">ROUND 1</option>
+            <option value="2">ROUND 2</option>
+            <option value="3">ROUND 3</option>
+            <option value="4">ROUND 4</option>
+        </select>
+    </div>
+    <div class="team-table-wrap">
+        <table class="team-access-table">
+            <thead>
+                <tr>
+                    <th>TEAM</th><th>SCORE</th><th>CURRENT ROUND</th>
+                    <th>R1</th><th>R2</th><th>R3</th><th>R4</th><th>ACTION</th>
+                </tr>
+            </thead>
+            <tbody id="team-access-rows">
+                {% for team in teams %}
+                {% set access_rows = team_round_access[team.id] %}
+                <tr data-team-name="{{ team.team_name|lower }}" data-current-round="{{ team.current_round }}">
+                    <td>{{ team.team_name }}</td>
+                    <td>{{ team.score }}</td>
+                    <td>ROUND {{ team.current_round }}</td>
+                    {% for round_number in range(1, 5) %}
+                    {% set access = access_rows[round_number] %}
+                    {% if access.completed_at %}
+                    <td class="team-round-complete" aria-label="Completed">✓</td>
+                    {% elif access.unlocked %}
+                    <td class="team-round-open" aria-label="Unlocked">🟢</td>
+                    {% else %}
+                    <td class="team-round-locked" aria-label="Locked">🔒</td>
+                    {% endif %}
+                    {% endfor %}
+                    <td>
+                        {% set next_round = team.current_round + 1 %}
+                        {% if next_round <= 4 and access_rows[team.current_round].completed_at and not access_rows[next_round].unlocked %}
+                        <button class="team-unlock-btn" onclick="unlockTeamRound({{ team.id }}, {{ next_round }})">
+                            UNLOCK ROUND {{ next_round }}
+                        </button>
+                        {% elif team.status == 'FINISHED' %}
+                        CASE COMPLETE
+                        {% elif next_round <= 4 and access_rows[next_round].unlocked %}
+                        ROUND {{ next_round }} UNLOCKED
+                        {% else %}
+                        AWAITING COMPLETION
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8">No teams registered.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
 
 <h2 class="section-title" style="margin-top:20px;">DANGER ZONE</h2>
 <div class="danger-zone animated-list">
@@ -228,6 +348,37 @@ async function resetRound(roundNumber) {
         alert('Network error: ' + e);
     }
 }
+
+async function unlockTeamRound(teamId, roundNumber) {
+    try {
+        const resp = await fetch(`/api/admin/team/${teamId}/round/${roundNumber}/unlock`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            location.reload();
+        } else {
+            alert('Unlock failed: ' + JSON.stringify(data));
+        }
+    } catch(e) {
+        alert('Network error: ' + e);
+    }
+}
+
+function filterTeams() {
+    const query = document.getElementById('team-search').value.trim().toLowerCase();
+    const round = document.getElementById('team-round-filter').value;
+    document.querySelectorAll('#team-access-rows tr[data-team-name]').forEach(row => {
+        const matchesName = row.dataset.teamName.includes(query);
+        const matchesRound = round === 'all' || row.dataset.currentRound === round;
+        row.hidden = !(matchesName && matchesRound);
+    });
+}
+
+document.getElementById('team-search').addEventListener('input', filterTeams);
+document.getElementById('team-round-filter').addEventListener('change', filterTeams);
 
 async function clearParticipants() {
     try {

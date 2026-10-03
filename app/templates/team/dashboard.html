@@ -46,6 +46,10 @@
   border-color: rgba(39,174,96,0.3);
   background: rgba(39,174,96,0.06);
 }
+.rt-node.available {
+  border-color: rgba(91,196,203,0.35);
+  background: rgba(91,196,203,0.06);
+}
 .rt-node.locked {
   border-color: rgba(255,255,255,0.04);
   background: transparent; opacity: 0.35;
@@ -56,6 +60,7 @@
 }
 .rt-node.active  .rt-num { color: var(--accent); }
 .rt-node.done    .rt-num { color: var(--success); }
+.rt-node.available .rt-num { color: var(--accent); }
 .rt-node.locked  .rt-num { color: var(--text-dim); }
 .rt-label {
   font-family: var(--fd); font-size: 16px; letter-spacing: 0.16em;
@@ -63,6 +68,7 @@
 }
 .rt-node.active  .rt-label { color: var(--text-bright); }
 .rt-node.done    .rt-label { color: rgba(39,174,96,0.8); }
+.rt-node.available .rt-label { color: var(--accent); }
 .rt-node.locked  .rt-label { color: var(--text-dim); }
 .rt-connector {
   width: 24px; height: 1px;
@@ -166,7 +172,7 @@
   transition: border-color 0.2s;
 }
 .puzzle-row.solved { border-color: rgba(39,174,96,0.25); background: rgba(39,174,96,0.04); }
-.puzzle-row.active { border-color: var(--border-ac); }
+.puzzle-row.active, .puzzle-row.available { border-color: var(--border-ac); }
 .puzzle-row.locked { opacity: 0.35; }
 .pr-indicator {
   width: 18px; height: 18px; border-radius: 50%;
@@ -182,6 +188,7 @@
 }
 .puzzle-row.solved .pr-name { color: rgba(39,174,96,0.85); }
 .puzzle-row.active .pr-name { color: var(--text-bright); }
+.puzzle-row.available .pr-name { color: var(--accent); }
 .puzzle-row.locked .pr-name { color: var(--text-dim); }
 .pr-status {
   font-family: var(--fm); font-size: 16px; letter-spacing: 0.14em;
@@ -222,7 +229,7 @@
 
 {% block content %}
 {% set solved = team.solved_puzzles.split(',') if team.solved_puzzles else [] %}
-{% set unlocked = team.unlocked_evidence.split(',') if team.unlocked_evidence else [] %}
+{% set unlocked = visible_evidence %}
 
 <div class="dash-wrap">
 
@@ -238,10 +245,10 @@
       {% for i, label in [(1,'CRIME SCENE'),(2,'DIGITAL TRAIL'),(3,'PROJECT 9'),(4,'FINAL DEDUCTION')] %}
       <div class="rt-item">
         {% if i > 1 %}
-        <div class="rt-connector {% if team.current_round > i-1 %}done-line{% endif %}"></div>
+        <div class="rt-connector {% if round_access[i-1].completed_at %}done-line{% endif %}"></div>
         {% endif %}
-        <div class="rt-node {% if team.current_round == i %}active{% elif team.current_round > i %}done{% else %}locked{% endif %}">
-          <div class="rt-num">0{{ i }} {% if team.current_round > i %}✓{% endif %}</div>
+        <div class="rt-node {% if round_access[i].completed_at %}done{% elif team.current_round == i %}active{% elif round_access[i].unlocked %}available{% else %}locked{% endif %}">
+          <div class="rt-num">0{{ i }} {% if round_access[i].completed_at %}✓{% endif %}</div>
           <div class="rt-label">{{ label }}</div>
         </div>
       </div>
@@ -300,7 +307,7 @@
            class="action-link" style="border-color:var(--border); color:var(--text-dim);">
           THEORY NOTES
         </a>
-        {% if team.current_round >= 4 %}
+        {% if team.current_round == 4 and round_access[4].unlocked %}
         <a href="{{ url_for('team.final_accusation') }}"
            class="action-link" style="background:var(--danger-dim); border-color:rgba(192,57,43,0.45); color:var(--danger);">
           FINAL ACCUSATION
@@ -317,7 +324,10 @@
     <div class="panel center-panel">
       <div class="cp-round">ACTIVE INVESTIGATION — ROUND 0{{ team.current_round }}</div>
 
-      {% if team.current_round == 1 %}
+      {% if not round_content_access[team.current_round] %}
+      <div class="cp-objective">AWAITING ROUND ACCESS</div>
+      <div class="cp-desc">Your team is standing by for the global round release.</div>
+      {% elif team.current_round == 1 %}
       <div class="cp-objective">WHAT ACTUALLY HAPPENED?</div>
       <div class="cp-desc">Examine the crime scene. Vikram Sen is dead — cardiac arrest, locked room, no external trauma. Something in this laboratory tells a different story. Find the body, check the CCTV, decode the note.</div>
       {% elif team.current_round == 2 %}
@@ -327,7 +337,7 @@
       <div class="cp-objective">WHAT WAS PROJECT 9?</div>
       <div class="cp-desc">Access the Project 9 archives. The prediction data is alarming. Something in this system reached far beyond its original design parameters. Understand what it became.</div>
       {% else %}
-      <div class="cp-objective" style="color:var(--danger);">WHO KILLED VIKRAM SEN?</div>
+      <div class="cp-objective stagger-heading" style="color:var(--danger);">WHO KILLED VIKRAM SEN?</div>
       <div class="cp-desc">You have all the pieces. The locked room. The override. The prediction. The eighth signature. Reconstruct the case and submit your final accusation.</div>
       {% endif %}
 
@@ -339,22 +349,33 @@
           ('rohan_lie','Contradiction: Rohan Kapoor',2),
           ('anika_lie','Contradiction: Anika Rao',2),
           ('p9_motive','The Eighth Signature',3)] %}
+        {% if round_content_access[rnd] %}
         {% if pid in solved %}
-        <div class="puzzle-row solved">
+        <div class="puzzle-row solved" data-pid="{{ pid }}">
           <div class="pr-indicator solved">✓</div>
           <span class="pr-name">{{ label }}</span>
           <span class="pr-status solved">SOLVED</span>
         </div>
         {% elif team.current_round >= rnd %}
-        <div class="puzzle-row active">
+        <div class="puzzle-row active" data-pid="{{ pid }}">
           <div class="pr-indicator active">○</div>
           <span class="pr-name">{{ label }}</span>
           <span class="pr-status" style="color:var(--accent); font-size: 16px;">ACTIVE</span>
         </div>
         {% else %}
+        <div class="puzzle-row available" data-pid="{{ pid }}">
+          <div class="pr-indicator active">○</div>
+          <span class="pr-name">{{ label }}</span>
+          <span class="pr-status" style="color:var(--accent); font-size: 16px;">UNLOCKED</span>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+        {% for rnd in range(1, 4) %}
+        {% if not round_content_access[rnd] %}
         <div class="puzzle-row locked">
           <div class="pr-indicator locked">■</div>
-          <span class="pr-name">{{ label }}</span>
+          <span class="pr-name">Round {{ rnd }} objectives are locked</span>
           <span class="pr-status locked">LOCKED</span>
         </div>
         {% endif %}
@@ -422,5 +443,41 @@
   </div>
 
 </div>
-{% endblock %}
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const solvedRows = document.querySelectorAll('.puzzle-row.solved');
+  const storedSolved = JSON.parse(sessionStorage.getItem('known_solved') || '[]');
+  const currentSolved = [];
+  
+  solvedRows.forEach(row => {
+    const pid = row.getAttribute('data-pid');
+    if (pid) {
+      currentSolved.push(pid);
+      if (!storedSolved.includes(pid)) {
+        row.classList.add('just-solved');
+      }
+    }
+  });
+  
+  sessionStorage.setItem('known_solved', JSON.stringify(currentSolved));
+  const heading = document.querySelector('.stagger-heading');
+  if (heading) {
+    const text = heading.textContent;
+    heading.textContent = '';
+    const chars = text.split('');
+    chars.forEach((char, i) => {
+      const span = document.createElement('span');
+      span.className = 'stagger-word';
+      span.style.animationDelay = (i * 25) + 'ms';
+      if (char === ' ') {
+        span.innerHTML = '&nbsp;';
+      } else {
+        span.textContent = char;
+      }
+      heading.appendChild(span);
+    });
+  }
+});
+</script>
+{% endblock %}

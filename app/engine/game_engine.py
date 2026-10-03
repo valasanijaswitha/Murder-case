@@ -1,4 +1,4 @@
-from app.models import db, Team, ActivityLog
+from app.models import db, Team, TeamRoundAccess, ActivityLog
 import json
 from datetime import datetime, timezone
 
@@ -55,6 +55,67 @@ PUZZLE_ROUND = {
 class GameEngine:
 
     @staticmethod
+    def ensure_team_round_access(team, commit=True):
+        accesses = {
+            access.round_number: access
+            for access in TeamRoundAccess.query.filter_by(team_id=team.id).all()
+        }
+        solved = set(team.solved_puzzles.split(',')) if team.solved_puzzles else set()
+        current_round = team.current_round or 1
+        unlocked_through = min(4, max(current_round, team.authorized_round or 1))
+        now = datetime.now(timezone.utc)
+        changed = False
+
+        for round_number in range(1, 5):
+            access = accesses.get(round_number)
+            if access is None:
+                access = TeamRoundAccess(team_id=team.id, round_number=round_number)
+                db.session.add(access)
+                accesses[round_number] = access
+                changed = True
+
+            round_puzzles = {puzzle_id for puzzle_id, number in PUZZLE_ROUND.items()
+                             if number == round_number}
+            inferred_complete = bool(round_puzzles and round_puzzles.issubset(solved))
+            inferred_complete = inferred_complete or round_number < current_round
+            inferred_complete = inferred_complete or (
+                round_number == current_round and team.round_completed
+            )
+            inferred_complete = inferred_complete or (
+                round_number == 4 and team.status == 'FINISHED'
+            )
+
+            if round_number <= unlocked_through and not access.unlocked:
+                access.unlocked = True
+                access.unlocked_at = now
+                changed = True
+            if inferred_complete and not access.completed_at:
+                access.unlocked = True
+                access.unlocked_at = access.unlocked_at or now
+                access.completed_at = now
+                changed = True
+
+        if changed:
+            if commit:
+                db.session.commit()
+            else:
+                db.session.flush()
+        return accesses
+
+    @staticmethod
+    def can_access_round(team, round_number, require_global=True):
+        if not team or round_number < 1 or round_number > 4:
+            return False
+        accesses = GameEngine.ensure_team_round_access(team)
+        access = accesses.get(round_number)
+        if not access or not access.unlocked:
+            return False
+        if require_global:
+            rc = GameEngine.get_round_config(round_number)
+            return bool(rc and rc.status in ('RUNNING', 'COMPLETED'))
+        return True
+
+    @staticmethod
     def log(team_id, action, target_type=None, target_id=None, meta=None):
         log = ActivityLog(
             team_id=team_id, action=action,
@@ -102,8 +163,11 @@ class GameEngine:
         if required_round is None:
             return {"success": False, "error": "Unknown puzzle"}
 
-        if team.current_round < required_round:
-            return {"success": False, "error": "Puzzle not yet unlocked"}
+        if team.current_round != required_round:
+            return {"success": False, "error": "Puzzle is not part of the team's current round"}
+
+        if not GameEngine.can_access_round(team, required_round):
+            return {"success": False, "error": "Team does not have access to this round"}
 
         # Check global round state — must be RUNNING
         GameEngine.check_round_expired(team.current_round)
@@ -138,6 +202,11 @@ class GameEngine:
             if round_puzzles.issubset(set(solved)):
                 team.round_completed = True
                 team.score += 250  # Round complete bonus
+                access = TeamRoundAccess.query.filter_by(
+                    team_id=team.id, round_number=team.current_round
+                ).first()
+                if access:
+                    access.completed_at = datetime.now(timezone.utc)
                 db.session.commit()
                 return {"success": True, "message": "Correct! Round complete!", "round_completed": True, "current_round": team.current_round}
 
@@ -151,11 +220,22 @@ class GameEngine:
     @staticmethod
     def use_hint(team_id, puzzle_id, hint_index):
         team = Team.query.get(team_id)
-        if not team or team.ghost_points <= 0:
+        if not team:
+            return {"success": False, "error": "Team not found"}
+        required_round = PUZZLE_ROUND.get(puzzle_id)
+        if required_round is None or team.current_round != required_round:
+            return {"success": False, "error": "Puzzle is not part of the team's current round"}
+        if not GameEngine.can_access_round(team, required_round):
+            return {"success": False, "error": "Team does not have access to this round"}
+        GameEngine.check_round_expired(required_round)
+        rc = GameEngine.get_round_config(required_round)
+        if not rc or rc.status != 'RUNNING' or team.round_completed:
+            return {"success": False, "error": "Round is not active"}
+        if team.ghost_points <= 0:
             return {"success": False, "error": "No Ghost Points remaining."}
 
         hints = HINTS.get(puzzle_id, [])
-        if hint_index >= len(hints):
+        if hint_index < 0 or hint_index >= len(hints):
             return {"success": False, "error": "No more hints."}
 
         team.ghost_points -= 1
@@ -169,6 +249,14 @@ class GameEngine:
         team = Team.query.get(team_id)
         if not team:
             return {"success": False}
+        if team.current_round != 4 or not GameEngine.can_access_round(team, 4):
+            return {"success": False, "error": "Team does not have access to the final round"}
+        GameEngine.check_round_expired(4)
+        rc = GameEngine.get_round_config(4)
+        if not rc or rc.status != 'RUNNING':
+            return {"success": False, "error": "Final round is not active"}
+        if team.status == 'FINISHED':
+            return {"success": False, "error": "Final accusation already submitted"}
 
         score_add = 0
         breakdown = {}
@@ -208,6 +296,9 @@ class GameEngine:
         score_add += 500  # Base for submitting final
         team.score += score_add
         team.status = 'FINISHED'
+        access = TeamRoundAccess.query.filter_by(team_id=team.id, round_number=4).first()
+        if access:
+            access.completed_at = datetime.now(timezone.utc)
         GameEngine.log(team.id, 'FINAL_SUBMISSION', 'ACCUSATION', None, {"who": who, "score_add": score_add})
         db.session.commit()
 

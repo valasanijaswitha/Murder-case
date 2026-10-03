@@ -31,6 +31,18 @@ class Team(db.Model):
     theory_notes = db.Column(db.Text, default='')
     timeline_discoveries = db.Column(db.Text, default='')
 
+class TeamRoundAccess(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False, index=True)
+    round_number = db.Column(db.Integer, nullable=False)
+    unlocked = db.Column(db.Boolean, nullable=False, default=False)
+    unlocked_at = db.Column(db.DateTime, nullable=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('team_id', 'round_number', name='uq_team_round_access'),
+    )
+
 class Evidence(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -99,4 +111,3 @@ class FinalAccusation(db.Model):
     score_awarded = db.Column(db.Integer, default=0)
     submitted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     status = db.Column(db.String(20), default='PENDING') # PENDING, REVIEWED
-
