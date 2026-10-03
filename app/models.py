@@ -6,13 +6,13 @@ db = SQLAlchemy()
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_code = db.Column(db.String(20), unique=True, nullable=False)
     team_name = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
     player1_name = db.Column(db.String(80), nullable=False)
     player2_name = db.Column(db.String(80), nullable=False)
     current_round = db.Column(db.Integer, default=1)
