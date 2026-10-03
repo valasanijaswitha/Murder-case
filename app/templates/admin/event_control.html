@@ -138,7 +138,12 @@
               {% if status != 'RUNNING' %}disabled{% endif %}>
         ⏹ END ROUND {{ r.round_number }}
       </button>
-    </div>
+      <button class="rnd-btn"
+              style="border-color: rgba(91,196,203,0.45); color: var(--accent);"
+              onclick="resetRound({{ r.round_number }})"
+              {% if status != 'COMPLETED' %}disabled{% endif %}>
+        ↻ RESET ROUND {{ r.round_number }}
+      </button>
   </div>
   {% else %}
   <div class="animated-list-item" style="color:var(--text-dim); padding:20px;">
@@ -190,6 +195,34 @@ async function roundControl(roundNumber, action) {
             location.reload();
         } else {
             alert('Action failed: ' + JSON.stringify(d));
+        }
+    } catch(e) {
+        alert('Network error: ' + e);
+    }
+}
+
+async function resetRound(roundNumber) {
+    if (!confirm(
+        `Reset Round ${roundNumber}?\n\n` +
+        `The round will return to LOCKED status.\n` +
+        `You can then unlock and start it again.`
+    )) {
+        return;
+    }
+
+    try {
+        const resp = await fetch(`/api/admin/round/${roundNumber}/reset`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        });
+
+        const d = await resp.json();
+
+        if (d.ok) {
+            location.reload();
+        } else {
+            alert('Reset failed: ' + JSON.stringify(d));
         }
     } catch(e) {
         alert('Network error: ' + e);
